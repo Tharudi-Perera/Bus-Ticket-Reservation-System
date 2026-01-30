@@ -1,52 +1,49 @@
-# Bus Reservation Client
-
-Command-line client application for the bus ticket reservation system.
+# Bus Reservation System - Client Application
 
 ## Overview
+Command-line Java client for the Bus Reservation System. Provides a user-friendly menu interface to check seat availability and make reservations via REST API.
 
-This is a Java-based command-line client that interacts with the Bus Reservation REST API. It provides a user-friendly menu-driven interface for checking availability and making reservations.
-
-## Features
-
-- Interactive menu-driven interface
-- Check seat availability
-- Make ticket reservations
-- View booking details
-- HTTP client for REST API communication
-- User-friendly error messages
-
-## Technology Stack
-
-- Java 17
-- Jackson for JSON processing
-- HttpURLConnection for HTTP requests
-- Maven for build management
+---
 
 ## Prerequisites
 
-- Java 17 installed
-- Backend API running (see [Backend README](../backend/README.md))
+- **Java 17** or higher
+- **Maven 3.6+**
+- **Backend API** running (default: `http://localhost:8080/bus-reservation`)
+
+---
+
 
 ## Building the Client
+
+### 1. Build JAR with Dependencies
+
 
 ```bash
 cd client
 mvn clean package
 ```
 
-This will generate two JAR files in the `target/` directory:
-- `bus-reservation-client.jar` - Simple JAR
-- `bus-reservation-client-jar-with-dependencies.jar` - Fat JAR with all dependencies
+This creates two JAR files in `target/`:
+- `bus-reservation-client.jar` - Regular JAR
+- `bus-reservation-client-jar-with-dependencies.jar` - Fat JAR (includes all dependencies)
+
+---
 
 ## Running the Client
 
-### Using the Fat JAR (Recommended)
+### Option 1: Using the Fat JAR (Recommended)
 
 ```bash
 java -jar target/bus-reservation-client-jar-with-dependencies.jar
 ```
 
-### Using the Simple JAR
+### Option 2: With Custom API URL
+
+```bash
+java -jar target/bus-reservation-client-jar-with-dependencies.jar http://your-server:8080/bus-reservation
+```
+
 
 ```bash
 java -cp target/bus-reservation-client.jar com.busreservation.client.BusReservationClient

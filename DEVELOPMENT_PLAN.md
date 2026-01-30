@@ -256,6 +256,21 @@ jvAssignment/
 - Configure `pom.xml` for JAR packaging with dependencies
 - Create usage documentation
 
+**Implementation Details:**
+- **BusReservationClient.java**: Interactive menu with 3 options (check availability, make reservation, exit)
+- **HttpClient.java**: Utility for POST/GET requests with JSON handling and custom error handling
+- **DTOs**: 4 DTOs (AvailabilityRequest/Response, ReservationRequest/Response) matching backend contracts
+- **Error Handling**: User-friendly messages for 400, 409, 500, 503 status codes with helpful tips
+- **Field Fix**: Corrected `reservationTime` field to match backend response (was `timestamp`)
+- **JAR Packaging**: Maven Assembly Plugin creates fat JAR with all dependencies
+
+**Deliverables:**
+- ✅ Working client application (JAR)
+- ✅ User-friendly menu interface with formatted output
+- ✅ Complete HTTP client implementation with timeout handling
+- ✅ Client README with usage examples and troubleshooting
+
+
 **Deliverables:**
 - Working client application (JAR)
 - User-friendly interface

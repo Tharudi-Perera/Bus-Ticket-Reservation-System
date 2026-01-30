@@ -14,7 +14,8 @@ jvAssignment/
 │   │   │   ├── java/
 │   │   │   │   └── com/busreservation/
 │   │   │   │       ├── api/         # REST API endpoints
-│   │   │   │       ├── model/       # Domain models
+│   │   │   │       ├── dto/         # Data Transfer Objects (API layer)
+│   │   │   │       ├── entity/      # Domain entities (business logic)
 │   │   │   │       ├── service/     # Business logic
 │   │   │   │       ├── repository/  # In-memory data storage
 │   │   │   │       ├── util/        # Utilities (JSON parsing, etc.)

@@ -31,19 +31,70 @@ backend/
 ├── src/
 │   ├── main/
 │   │   ├── java/com/busreservation/
-│   │   │   ├── api/          # API layer
-│   │   │   ├── model/        # Domain models
-│   │   │   ├── service/      # Business logic
-│   │   │   ├── repository/   # Data storage
-│   │   │   ├── util/         # Utilities
-│   │   │   └── servlet/      # HTTP servlets
+│   │   │   ├── api/          # API layer (servlets)
+│   │   │   ├── dto/          # Data Transfer Objects (API contracts)
+│   │   │   ├── entity/       # Domain entities (business models)
+│   │   │   ├── service/      # Business logic layer
+│   │   │   ├── repository/   # Data access layer
+│   │   │   ├── util/         # Utility classes
+│   │   │   └── servlet/      # HTTP servlet endpoints
 │   │   └── webapp/
 │   │       └── WEB-INF/
 │   │           └── web.xml   # Servlet configuration
 │   └── test/
-│       └── java/             # Unit tests
+│       └── java/             # Unit and integration tests
 └── pom.xml                   # Maven configuration
 ```
+
+## Architecture & SOLID Principles
+
+This project follows **clean architecture** and **SOLID principles**:
+
+### Layer Separation
+- **DTO Layer** (`dto/`): Data Transfer Objects for API input/output
+  - Clean API contracts independent of internal implementation
+  - Annotated with Jackson for JSON serialization
+  - Examples: `AvailabilityRequestDTO`, `ReservationResponseDTO`
+
+- **Entity Layer** (`entity/`): Domain models with business logic
+  - Core business objects (Location, Route, Seat, Reservation)
+  - Encapsulate business rules and validations
+  - Independent of external concerns (API, database)
+
+- **Service Layer** (`service/`): Business logic orchestration
+  - Coordinate between repositories and entities
+  - Implement use cases and workflows
+  - Transaction boundaries
+
+- **Repository Layer** (`repository/`): Data access abstraction
+  - Manage data persistence (in-memory for this project)
+  - Thread-safe operations
+  - Can be swapped for database implementation
+
+### SOLID Principles Applied
+
+1. **Single Responsibility**: Each class has one reason to change
+   - DTOs only handle data transfer
+   - Entities only contain business logic
+   - Services orchestrate workflows
+   - Repositories manage data access
+
+2. **Open/Closed**: Open for extension, closed for modification
+   - Service interfaces allow multiple implementations
+   - Strategy pattern for pricing logic
+
+3. **Liskov Substitution**: Interfaces define contracts
+   - Repository interfaces can be swapped
+   - Service implementations are interchangeable
+
+4. **Interface Segregation**: Focused interfaces
+   - Small, specific interfaces for each concern
+   - Clients depend only on what they need
+
+5. **Dependency Inversion**: Depend on abstractions
+   - High-level modules don't depend on low-level modules
+   - Both depend on interfaces
+
 
 ## Building the Project
 
@@ -140,11 +191,29 @@ mvn jacoco:report
 
 ### Adding New Features
 
-1. Create domain models in `model/` package
-2. Implement business logic in `service/` package
-3. Add data access in `repository/` package
-4. Create servlet endpoints in `servlet/` package
-5. Write unit tests in `test/` directory
+1. **Create DTOs** in `dto/` package for API contracts
+2. **Create/update entities** in `entity/` package for business models
+3. **Implement business logic** in `service/` package
+4. **Add data access** in `repository/` package
+5. **Create servlet endpoints** in `servlet/` or `api/` package
+6. **Write unit tests** in `test/` directory
+
+### DTO vs Entity Pattern
+
+**DTOs** (Data Transfer Objects):
+- Used for API input/output only
+- No business logic
+- JSON annotations for serialization
+- May flatten or aggregate data for API needs
+- Example: `AvailabilityRequestDTO` receives JSON from client
+
+**Entities** (Domain Models):
+- Contain business logic and rules
+- Represent core domain concepts
+- Independent of API structure
+- Encapsulate behavior
+- Example: `Route` validates pricing and calculates segments
+
 
 ### Code Style
 

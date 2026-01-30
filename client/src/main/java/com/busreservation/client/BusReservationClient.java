@@ -20,6 +20,10 @@ public class BusReservationClient {
     
     public BusReservationClient(String apiUrl) {
         this.httpClient = new HttpClient(apiUrl);
+        // Enable debug mode if -Ddebug=true is passed
+        if (Boolean.parseBoolean(System.getProperty("debug", "false"))) {
+            this.httpClient.setDebugMode(true);
+        }
         this.scanner = new Scanner(System.in);
     }
     

@@ -18,6 +18,7 @@ public class HttpClient {
     
     private final String baseUrl;
     private final ObjectMapper objectMapper;
+    private boolean debugMode;
     
     /**
      * Creates a new HTTP client with the specified base URL.
@@ -28,6 +29,16 @@ public class HttpClient {
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
         this.objectMapper = new ObjectMapper();
         this.objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+        this.debugMode = Boolean.parseBoolean(System.getProperty("debug", "false"));
+    }
+    
+    /**
+     * Enables or disables debug mode to show network calls.
+     *
+     * @param enabled true to show network calls, false to hide
+     */
+    public void setDebugMode(boolean enabled) {
+        this.debugMode = enabled;
     }
     
     /**
@@ -57,6 +68,18 @@ public class HttpClient {
             
             // Send request body
             String jsonRequest = objectMapper.writeValueAsString(requestBody);
+               
+            if (debugMode) {
+                System.out.println("\n" + "=".repeat(70));
+                System.out.println("🌐 HTTP REQUEST");
+                System.out.println("=".repeat(70));
+                System.out.println("Method: POST");
+                System.out.println("URL: " + fullUrl);
+                System.out.println("\nRequest Body:");
+                System.out.println(jsonRequest);
+                System.out.println("=".repeat(70));
+            }
+            
             try (OutputStream os = connection.getOutputStream()) {
                 byte[] input = jsonRequest.getBytes(StandardCharsets.UTF_8);
                 os.write(input, 0, input.length);
@@ -67,6 +90,18 @@ public class HttpClient {
             
             // Read response
             String responseBody = readResponse(connection, responseCode >= 400);
+
+            
+            if (debugMode) {
+                System.out.println("\n" + "=".repeat(70));
+                System.out.println("🌐 HTTP RESPONSE");
+                System.out.println("=".repeat(70));
+                System.out.println("Status Code: " + responseCode);
+                System.out.println("\nResponse Body:");
+                System.out.println(responseBody);
+                System.out.println("=".repeat(70) + "\n");
+            }
+            
             
             // Handle error responses
             if (responseCode >= 400) {
@@ -102,12 +137,33 @@ public class HttpClient {
             connection.setRequestProperty("Accept", "application/json");
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
+
+            
+            if (debugMode) {
+                System.out.println("\n" + "=".repeat(70));
+                System.out.println("🌐 HTTP REQUEST");
+                System.out.println("=".repeat(70));
+                System.out.println("Method: GET");
+                System.out.println("URL: " + fullUrl);
+                System.out.println("=".repeat(70));
+            }
+            
             
             // Get response code
             int responseCode = connection.getResponseCode();
             
             // Read response
             String responseBody = readResponse(connection, responseCode >= 400);
+            
+            if (debugMode) {
+                System.out.println("\n" + "=".repeat(70));
+                System.out.println("🌐 HTTP RESPONSE");
+                System.out.println("=".repeat(70));
+                System.out.println("Status Code: " + responseCode);
+                System.out.println("\nResponse Body:");
+                System.out.println(responseBody);
+                System.out.println("=".repeat(70) + "\n");
+            }
             
             // Handle error responses
             if (responseCode >= 400) {

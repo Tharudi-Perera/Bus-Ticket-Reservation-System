@@ -180,9 +180,20 @@ jvAssignment/
 - Implement proper error handling and HTTP status codes
 
 **Deliverables:**
-- Working REST API endpoints
-- Proper HTTP methods and status codes
-- Error handling
+-  Working REST API endpoints with @WebServlet annotations
+-  Proper HTTP methods and status codes (200, 201, 400, 405, 409, 500)
+-  Error handling with ErrorResponseDTO integration
+-  CORS support for cross-origin API access
+-  WAR packaging successful
+
+
+**Implementation Details:**
+- **AvailabilityServlet**: `@WebServlet("/api/availability")`, POST method with JSON request/response
+- **ReservationServlet**: `@WebServlet("/api/reservation")`, POST method with 201 Created status
+- **Error Handling**: Returns 400 for validation errors, 409 for conflicts, 500 for server errors
+- **CORS Support**: Includes OPTIONS method and CORS headers for cross-origin requests
+- **Method Restrictions**: Returns 405 for unsupported methods (GET, PUT, DELETE)
+
 
 ---
 

@@ -60,7 +60,6 @@ jvAssignment/
 ## Phase-by-Phase Development Plan
 
 ### Phase 1: Project Setup & Initialization
-**Commit Message:** `chore: initialize project structure with git and folder organization`
 
 **Tasks:**
 - Initialize git repository
@@ -78,7 +77,6 @@ jvAssignment/
 ---
 
 ### Phase 2: Backend - Domain Models
-**Commit Message:** `feat(backend): implement domain models for bus reservation system`
 
 **Tasks:**
 - Create `Seat.java` - Represents a bus seat with number and status
@@ -98,7 +96,6 @@ jvAssignment/
 ---
 
 ### Phase 3: Backend - Repository Layer (In-Memory Storage)
-**Commit Message:** `feat(backend): implement in-memory repository for bus data management`
 
 **Tasks:**
 - Create `BusRepository.java` - Manages seat availability
@@ -116,7 +113,6 @@ jvAssignment/
 ---
 
 ### Phase 4: Backend - Service Layer
-**Commit Message:** `feat(backend): implement business logic for ticket reservation`
 
 **Tasks:**
 - Create `PricingService.java` - Calculate ticket prices
@@ -142,7 +138,6 @@ jvAssignment/
 ---
 
 ### Phase 5: Backend - Utility Layer
-**Commit Message:** `feat(backend): add JSON utilities and helper classes`
 
 **Tasks:**
 - Create `JsonUtil.java` - JSON parsing using Jackson
@@ -164,7 +159,6 @@ jvAssignment/
 ---
 
 ### Phase 6: Backend - REST API Endpoints (Servlets)
-**Commit Message:** `feat(backend): implement REST API endpoints for availability and reservation`
 
 **Tasks:**
 - Create `AvailabilityServlet.java` - GET/POST endpoint for checking availability
@@ -198,8 +192,6 @@ jvAssignment/
 ---
 
 ### Phase 7: Backend - Unit Tests
-**Commit Message:** `test(backend): add comprehensive unit tests for all services`
-
 **Tasks:**
 -  Create BusReservationSystemTest.java - Integration tests
 -  Test singleton patterns
@@ -226,7 +218,6 @@ jvAssignment/
 ---
 
 ### Phase 8: Backend - Build & Package
-**Commit Message:** `build(backend): configure Maven to generate WAR file`
 
 **Tasks:**
 - Configure `pom.xml` for WAR packaging
@@ -244,7 +235,6 @@ jvAssignment/
 ---
 
 ### Phase 9: Client Application
-**Commit Message:** `feat(client): implement command-line client for bus reservation`
 
 **Tasks:**
 - Create `BusReservationClient.java` - Main client application
@@ -280,7 +270,6 @@ jvAssignment/
 ---
 
 ### Phase 10: Documentation
-**Commit Message:** `docs: add comprehensive documentation for deployment and usage`
 
 **Tasks:**
 - Create `API_DOCUMENTATION.md` - Complete API documentation
@@ -309,7 +298,81 @@ jvAssignment/
 ---
 
 ### Phase 11: Testing & Refinement
-**Commit Message:** `test: end-to-end testing and bug fixes`
+
+**1. Availability Display Bug Fix**
+- **Issue:** When requesting more seats than available, client displayed "Available Seats: 0" instead of showing actual available count
+- **Root Cause:** Backend `BusRepository.getAvailableSeats()` returned empty list when `availableSeats.size() < count`
+- **Solution Implemented:**
+  - **Backend Fix:** Modified `BusRepository.java` line 112 to always return available seats regardless of request count
+  - **Client Enhancement:** Improved `BusReservationClient.displayAvailabilityResults()` to show:
+    - "Requested Seats: X"
+    - "Available Seats: Y"
+    - Clear insufficient seats message with helpful guidance
+- **Testing:** Verified with multiple scenarios (requesting 32 seats with 10 available, requesting 35 seats with 2 available)
+- **Files Modified:**
+  - `backend/src/main/java/com/busreservation/repository/BusRepository.java`
+  - `client/src/main/java/com/busreservation/client/BusReservationClient.java`
+
+**2. Concurrent Testing Framework**
+- **Created:** `ConcurrentReservationTest.java` (270+ lines)
+- **Test Scenarios:**
+  - Scenario 1: Last 5 seats, 2 users each book 5 seats simultaneously
+  - Scenario 2: Last 1 seat, 5 users compete for it
+  - Scenario 3: 10 concurrent users with random booking sizes
+- **Testing Tools:** CountDownLatch, ExecutorService, AtomicInteger for thread coordination
+- **Support Added:** `ReservationRepository.reset()` method for test cleanup
+- **Status:** Framework created but not yet executed
+
+---
+
+#### 📋 Pending Tasks
+
+**1. Execute Concurrent Tests**
+- [ ] Compile and run `ConcurrentReservationTest.java`
+- [ ] Verify no race conditions or overselling occurs
+- [ ] Validate thread-safe operations
+- [ ] Document test results
+
+**2. Manual End-to-End Testing**
+- [ ] Deploy WAR to Tomcat (DONE - backend deployed)
+- [ ] Test all API endpoints with cURL/Postman
+- [ ] Test client application with various scenarios
+- [ ] Test edge cases (invalid inputs, boundary conditions)
+- [ ] Verify error handling and messages
+
+**3. Performance Testing**
+- [ ] Load test with 50+ concurrent users
+- [ ] Measure response times under load
+- [ ] Test system stability over extended periods
+- [ ] Identify performance bottlenecks
+
+**4. Code Review & Refactoring**
+- [ ] Review all code for quality and maintainability
+- [ ] Check for code duplication
+- [ ] Optimize algorithms if needed
+- [ ] Ensure consistent code style
+
+---
+
+#### 🔄 Future Enhancements (Deferred)
+
+**Race Condition Analysis**  
+*Note: Current implementation uses synchronized methods in `ReservationService.createReservation()` which validates seat availability before committing. This provides basic protection against overselling.*
+
+**Potential Improvements (Future Phase):**
+- Optimistic locking with version checking
+- Seat reservation timeout mechanism (e.g., 5-minute hold)
+- Idempotency tokens for staleness detection
+- Real-time seat monitoring with WebSocket/SSE
+- Enhanced error messages with availability snapshots
+
+**Additional Features (Future Development):**
+- Allow users to view available seats and select specific seats
+- Multi-threading optimizations for improved performance
+- Rate limiting and request throttling
+- Distributed caching for high-traffic scenarios
+
+---
 
 **Tasks:**
 - Deploy WAR to Tomcat

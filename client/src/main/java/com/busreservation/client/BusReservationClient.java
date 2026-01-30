@@ -258,12 +258,20 @@ public class BusReservationClient {
         System.out.println("Price per Seat: Rs. " + String.format("%.2f", response.getPricePerSeat()));
         System.out.println("Total Price: Rs. " + String.format("%.2f", response.getTotalPrice()));
         System.out.println();
-        System.out.println("Available Seats: " + response.getAvailableSeats().size());
+
+        int availableCount = response.getAvailableSeats().size();
+        int requestedCount = response.getPassengers();
         
-        if (response.getAvailableSeats().isEmpty()) {
+        System.out.println("Requested Seats: " + requestedCount);
+        System.out.println("Available Seats: " + availableCount);
+        
+        if (availableCount == 0) {
             System.out.println("\n⚠ No seats available for this route.");
-        } else if (response.getAvailableSeats().size() < response.getPassengers()) {
-            System.out.println("\n⚠ Not enough seats available. Only " + response.getAvailableSeats().size() + " seats remaining.");
+            System.out.println("   All seats are currently booked.");
+        } else if (availableCount < requestedCount) {
+            System.out.println("\n⚠ Insufficient seats!");
+            System.out.println("   You requested " + requestedCount + " seat(s), but only " + availableCount + " seat(s) available.");
+            System.out.println("   Please try booking with " + availableCount + " or fewer passengers.");
         } else {
             System.out.println("\n✓ Sufficient seats available!");
             System.out.println("\nSample Available Seats:");

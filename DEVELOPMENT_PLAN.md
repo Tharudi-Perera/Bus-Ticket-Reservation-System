@@ -305,10 +305,83 @@ jvAssignment/
 - Performance testing
 - Code review and refactoring
 
+
+**Critical Issues to Address:**
+
+#### 🔴 **Race Condition: Concurrent Seat Reservations** //before this find loop halls in the current system
+
+**Problem Scenario:**
+```
+Timeline:
+T1: Last 5 seats available
+T2: User A checks availability → sees 5 seats available
+T3: User B checks availability → sees 5 seats available  
+T4: User A submits reservation for 5 seats → SUCCESS
+T5: User B submits reservation for 5 seats → SHOULD FAIL (no seats left)
+```
+
+**Current Implementation Gap:**
+- `AvailabilityService.checkAvailability()` is **NOT synchronized** (read-only operation)
+- `ReservationService.createReservation()` **IS synchronized** but creates a race window:
+  - Window between: User checking availability → User submitting reservation
+  - Another user can book seats during this window
+  - User B sees outdated availability information
+
+**Risk Level:** 🔴 **HIGH** - Multiple concurrent users can oversell seats
+
+**Proposed Solutions:**
+
+1. **Optimistic Locking Approach (Recommended)**
+   - Check seat availability again inside `createReservation()` before committing
+   - Return `409 Conflict` if seats become unavailable between check and booking
+   - Current code already does this ✅ (validates inside synchronized block)
+   - **Additional improvement needed:** 
+     - Add explicit timestamp/version checking
+     - Return detailed error: "Seats no longer available, please search again"
+
+2. **Pessimistic Locking Approach (Alternative)**
+   - Implement seat "reservation hold" mechanism with timeout (e.g., 5 minutes)
+   - When user checks availability, temporarily lock seats
+   - Release locks after timeout or successful booking
+   - Prevents race conditions but adds complexity
+
+3. **Idempotency Tokens**
+   - Generate unique token during availability check
+   - Include token in reservation request
+   - Validate token hasn't expired (stale availability data)
+   - Reject reservations with expired tokens
+
+4. **Real-time Seat Monitoring**
+   - WebSocket/SSE for live seat availability updates
+   - Notify users immediately when seats become unavailable
+   - Client-side updates prevent booking attempts on unavailable seats
+
+**Testing Requirements:**
+- Write concurrent unit tests simulating race conditions
+- Use `CountDownLatch` or `CyclicBarrier` to coordinate threads
+- Verify system handles 10+ simultaneous reservations correctly
+- Test scenarios:
+  - ✓ Last 5 seats, 2 users each book 5 seats
+  - ✓ Last 1 seat, 5 users try to book it
+  - ✓ Verify no overselling occurs
+  - ✓ Verify proper error messages returned
+
+**Implementation Tasks:**
+- [ ] Add concurrent reservation stress tests
+- [ ] Enhance error messages with availability snapshot info
+- [ ] Consider adding reservation timeout mechanism
+- [ ] Document race condition behavior in API docs
+- [ ] Add retry logic guidance for clients
+- [ ] Performance test with 50+ concurrent users
+
+
 **Deliverables:**
 - Tested and verified system
 - Bug fixes
+- Race condition mitigation implemented
+- Concurrent load testing results
 - Performance optimizations
+- Updated documentation on concurrent behavior
 
 ---
 

@@ -155,6 +155,12 @@ jvAssignment/
 - HTTP utilities
 - Validation utilities
 
+**Implementation Details:**
+- **JsonUtil**: Jackson-based JSON serialization/deserialization with pretty printing
+- **HttpUtil**: Servlet request/response helpers with JSON support and CORS
+- **ValidationUtil**: Comprehensive input validation (locations, passengers, prices, etc.)
+
+
 ---
 
 ### Phase 6: Backend - REST API Endpoints (Servlets)

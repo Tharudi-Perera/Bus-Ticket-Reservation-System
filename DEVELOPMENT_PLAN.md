@@ -133,6 +133,12 @@ jvAssignment/
 - Proper error handling
 - Input validation
 
+**Implementation Details:**
+- **PricingService**: Singleton pattern, Rs.50 per segment pricing
+- **AvailabilityService**: Integrates BusRepository and PricingService
+- **ReservationService**: Complete reservation workflow with thread-safe operations
+
+
 ---
 
 ### Phase 5: Backend - Utility Layer

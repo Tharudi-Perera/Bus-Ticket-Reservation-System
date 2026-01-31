@@ -98,4 +98,12 @@ public class ReservationRepository {
     public void clear() {
         reservations.clear();
     }
+
+    /**
+     * Reset all reservations (alias for clear, for testing purposes).
+     */
+    public synchronized void reset() {
+        reservations.clear();
+    }
+    
 }

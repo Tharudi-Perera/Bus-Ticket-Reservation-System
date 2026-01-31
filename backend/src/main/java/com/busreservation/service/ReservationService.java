@@ -76,15 +76,18 @@ public class ReservationService {
             throw new IllegalStateException("Not enough seats available for the requested route");
         }
         
-        // Get available seats
+        // Get available seats (API returns all available, we take only what we need)
         List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers());
         
-        if (availableSeats.isEmpty()) {
-            throw new IllegalStateException("Failed to allocate seats. Please try again.");
+        if (availableSeats.size() < request.getPassengers()) {
+            throw new IllegalStateException("Not enough seats available. Only " + availableSeats.size() + " seat(s) available.");
         }
         
+        // Take only the number of seats needed
+        List<String> seatsToReserve = availableSeats.subList(0, request.getPassengers());
+        
         // Reserve seats in repository
-        boolean reserved = busRepository.reserveSeats(origin, destination, availableSeats);
+        boolean reserved = busRepository.reserveSeats(origin, destination, seatsToReserve);
         
         if (!reserved) {
             throw new IllegalStateException("Failed to reserve seats. They may have been taken by another user.");
@@ -92,7 +95,7 @@ public class ReservationService {
         
         // Create route and reservation
         Route route = new Route(origin, destination);
-        Reservation reservation = new Reservation(route, availableSeats, request.getPassengers(), request.getPrice());
+        Reservation reservation = new Reservation(route, seatsToReserve, request.getPassengers(), request.getPrice());
         
         // Save reservation
         reservationRepository.save(reservation);
@@ -100,7 +103,7 @@ public class ReservationService {
         // Build response
         return new ReservationResponseDTO(
             reservation.getReservationId(),
-            availableSeats,
+            seatsToReserve,
             request.getOrigin(),
             request.getDestination(),
             request.getPassengers(),

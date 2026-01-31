@@ -101,11 +101,10 @@ public class BusRepository {
             occupiedSeats.addAll(routeSegmentOccupancy.getOrDefault(segment, Collections.emptySet()));
         }
         
-        // Find available seats (return all available, even if less than requested)
+        // Find available seats (return ALL available seats, not limited by request count)
         List<String> availableSeats = seats.stream()
                 .map(Seat::getSeatNumber)
                 .filter(seatNumber -> !occupiedSeats.contains(seatNumber))
-                .limit(count)
                 .collect(Collectors.toList());
         
         return availableSeats;

@@ -351,4 +351,89 @@ public class ConcurrentReservationTest {
         System.out.println("✓ No overselling detected");
         System.out.println("=".repeat(80) + "\n");
     }
+
+    /**
+     * Test Scenario 4: Date-Based Concurrent Reservations
+     * 
+     * Setup: Test concurrent bookings on different dates
+     * Test: Multiple users booking seats on the same date and different dates simultaneously
+     * Expected: Each date should have independent seat availability
+     */
+    @Test
+    @Order(4)
+    public void testScenario4_DateBasedConcurrentReservations() throws InterruptedException {
+        System.out.println("\n" + "-".repeat(80));
+        System.out.println("SCENARIO 4: Date-Based Concurrent Reservations");
+        System.out.println("-".repeat(80));
+
+        String date1 = "2026-02-15";
+        String date2 = "2026-02-16";
+
+        int numThreads = 4;
+        ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch endLatch = new CountDownLatch(numThreads);
+
+        AtomicInteger successCount = new AtomicInteger(0);
+        AtomicInteger failureCount = new AtomicInteger(0);
+        List<ReservationResponseDTO> allReservations = new CopyOnWriteArrayList<>();
+
+        System.out.println("\n🚀 Launching 4 concurrent users (2 for each date)...");
+        
+        // 2 users booking 10 seats each on date1, 2 users booking 10 seats each on date2
+        String[] dates = {date1, date1, date2, date2};
+        
+        for (int i = 0; i < numThreads; i++) {
+            final int userId = i + 1;
+            final String bookingDate = dates[i];
+            
+            executor.submit(() -> {
+                try {
+                    startLatch.await();
+
+                    System.out.println("   User " + userId + ": Attempting to book 10 seats for " + bookingDate);
+                    
+                    ReservationRequestDTO request = new ReservationRequestDTO();
+                    request.setPassengers(10);
+                    request.setOrigin("A");
+                    request.setDestination("C");
+                    request.setPrice(1000.0); // 10 * 100
+                    request.setTravelDate(bookingDate);
+
+                    ReservationResponseDTO response = reservationService.createReservation(request);
+                    
+                    successCount.incrementAndGet();
+                    allReservations.add(response);
+                    System.out.println("   User " + userId + ": ✓ SUCCESS on " + bookingDate);
+
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    failureCount.incrementAndGet();
+                } catch (Exception e) {
+                    failureCount.incrementAndGet();
+                    System.out.println("   User " + userId + ": ✗ FAILED - " + e.getMessage());
+                } finally {
+                    endLatch.countDown();
+                }
+            });
+        }
+
+        Thread.sleep(100);
+        startLatch.countDown();
+        
+        boolean completed = endLatch.await(10, TimeUnit.SECONDS);
+        executor.shutdown();
+
+        System.out.println("\n📊 Results:");
+        System.out.println("   Successful bookings: " + successCount.get());
+        System.out.println("   Failed bookings: " + failureCount.get());
+
+        assertTrue(completed, "All threads should complete");
+        assertEquals(4, successCount.get(), 
+            "All 4 bookings should succeed (2 on each date with independent availability)");
+        assertEquals(0, failureCount.get(), "No failures expected with different dates");
+
+        System.out.println("   ✓ Date-based seat isolation working correctly");
+        System.out.println("✓ Scenario 4 PASSED: Date-based concurrent reservations handled correctly");
+    }
 }

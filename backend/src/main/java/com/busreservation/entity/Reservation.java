@@ -15,6 +15,7 @@ public class Reservation {
     private final int passengerCount;
     private final double totalPrice;
     private final LocalDateTime reservationTime;
+    private final String travelDate; // Format: YYYY-MM-DD
 
     /**
      * Create a new reservation.
@@ -30,6 +31,25 @@ public class Reservation {
         this.passengerCount = passengerCount;
         this.totalPrice = totalPrice;
         this.reservationTime = LocalDateTime.now();
+        this.travelDate = java.time.LocalDate.now().toString();
+    }
+
+    /**
+     * Create a new reservation with travel date.
+     * @param route the route being booked
+     * @param seatNumbers list of assigned seat numbers
+     * @param passengerCount number of passengers
+     * @param totalPrice total price for the reservation
+     * @param travelDate date of travel (YYYY-MM-DD format)
+     */
+    public Reservation(Route route, List<String> seatNumbers, int passengerCount, double totalPrice, String travelDate) {
+        this.reservationId = generateReservationId();
+        this.route = route;
+        this.seatNumbers = seatNumbers;
+        this.passengerCount = passengerCount;
+        this.totalPrice = totalPrice;
+        this.reservationTime = LocalDateTime.now();
+        this.travelDate = travelDate;
     }
 
     /**
@@ -88,6 +108,14 @@ public class Reservation {
         return reservationTime;
     }
 
+    /**
+     * Get the travel date.
+     * @return travel date (YYYY-MM-DD format)
+     */
+    public String getTravelDate() {
+        return travelDate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -110,6 +138,7 @@ public class Reservation {
                 ", passengers=" + passengerCount +
                 ", totalPrice=" + totalPrice +
                 ", time=" + reservationTime +
+                ", travelDate='" + travelDate + '\'' +
                 '}';
     }
 }

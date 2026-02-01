@@ -68,7 +68,7 @@ public class HttpClient {
             
             // Send request body
             String jsonRequest = objectMapper.writeValueAsString(requestBody);
-               
+            
             if (debugMode) {
                 System.out.println("\n" + "=".repeat(70));
                 System.out.println("🌐 HTTP REQUEST");
@@ -90,7 +90,6 @@ public class HttpClient {
             
             // Read response
             String responseBody = readResponse(connection, responseCode >= 400);
-
             
             if (debugMode) {
                 System.out.println("\n" + "=".repeat(70));
@@ -101,7 +100,6 @@ public class HttpClient {
                 System.out.println(responseBody);
                 System.out.println("=".repeat(70) + "\n");
             }
-            
             
             // Handle error responses
             if (responseCode >= 400) {
@@ -137,7 +135,6 @@ public class HttpClient {
             connection.setRequestProperty("Accept", "application/json");
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
-
             
             if (debugMode) {
                 System.out.println("\n" + "=".repeat(70));
@@ -147,7 +144,6 @@ public class HttpClient {
                 System.out.println("URL: " + fullUrl);
                 System.out.println("=".repeat(70));
             }
-            
             
             // Get response code
             int responseCode = connection.getResponseCode();

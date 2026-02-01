@@ -19,6 +19,9 @@ public class ReservationRequestDTO {
     @JsonProperty("price")
     private double price;
     
+    @JsonProperty("travelDate")
+    private String travelDate; // Format: YYYY-MM-DD
+    
     public ReservationRequestDTO() {
     }
     
@@ -27,6 +30,14 @@ public class ReservationRequestDTO {
         this.origin = origin;
         this.destination = destination;
         this.price = price;
+    }
+    
+    public ReservationRequestDTO(int passengers, String origin, String destination, double price, String travelDate) {
+        this.passengers = passengers;
+        this.origin = origin;
+        this.destination = destination;
+        this.price = price;
+        this.travelDate = travelDate;
     }
     
     public int getPassengers() {
@@ -59,5 +70,13 @@ public class ReservationRequestDTO {
     
     public void setPrice(double price) {
         this.price = price;
+    }
+    
+    public String getTravelDate() {
+        return travelDate;
+    }
+    
+    public void setTravelDate(String travelDate) {
+        this.travelDate = travelDate;
     }
 }

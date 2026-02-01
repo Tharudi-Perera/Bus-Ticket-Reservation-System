@@ -39,7 +39,7 @@ public class AvailabilityService {
     /**
      * Check availability for a route and return available seats.
      * 
-     * @param request availability request with passengers, origin, destination
+     * @param request availability request with passengers, origin, destination, and optional travelDate
      * @return availability response with available seats and pricing
      * @throws IllegalArgumentException if request is invalid
      */
@@ -51,8 +51,14 @@ public class AvailabilityService {
         Location origin = Location.valueOf(request.getOrigin().toUpperCase());
         Location destination = Location.valueOf(request.getDestination().toUpperCase());
         
-        // Get available seats
-        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers());
+        // Get travel date (use today if not provided)
+        String travelDate = request.getTravelDate();
+        if (travelDate == null || travelDate.trim().isEmpty()) {
+            travelDate = java.time.LocalDate.now().toString();
+        }
+        
+        // Get available seats for the specified date
+        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers(), travelDate);
         
         // Calculate pricing
         double pricePerSeat = pricingService.calculatePrice(origin, destination);
@@ -118,6 +124,15 @@ public class AvailabilityService {
         
         if (request.getDestination() == null || request.getDestination().trim().isEmpty()) {
             throw new IllegalArgumentException("Destination cannot be null or empty");
+        }
+        
+        // Validate travel date format if provided
+        if (request.getTravelDate() != null && !request.getTravelDate().trim().isEmpty()) {
+            try {
+                java.time.LocalDate.parse(request.getTravelDate());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid date format. Use YYYY-MM-DD");
+            }
         }
         
         // Validate locations exist

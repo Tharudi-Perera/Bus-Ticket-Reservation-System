@@ -302,4 +302,127 @@ class BusReservationSystemTest {
         assertTrue(availResponse.getAvailableSeats().size() >= 35, 
                   "Should have most seats available after reset. Got: " + availResponse.getAvailableSeats().size());
     }
+
+    @Test
+    @Order(13)
+    @DisplayName("Test 13: Date-based availability check with specific date")
+    void testDateBasedAvailability() {
+        String futureDate = "2026-02-15";
+        
+        AvailabilityRequestDTO request = new AvailabilityRequestDTO();
+        request.setPassengers(2);
+        request.setOrigin("A");
+        request.setDestination("C");
+        request.setTravelDate(futureDate);
+
+        AvailabilityResponseDTO response = availabilityService.checkAvailability(request);
+
+        assertNotNull(response, "Response should not be null");
+        assertEquals("A", response.getOrigin());
+        assertEquals("C", response.getDestination());
+        assertEquals(2, response.getPassengers());
+        assertEquals(200.0, response.getTotalPrice());
+        assertTrue(response.getAvailableSeats().size() >= 2, 
+                  "Should have at least 2 available seats for future date");
+    }
+
+    @Test
+    @Order(14)
+    @DisplayName("Test 14: Date-based reservation with specific date")
+    void testDateBasedReservation() {
+        String futureDate = "2026-02-20";
+        
+        ReservationRequestDTO request = new ReservationRequestDTO();
+        request.setPassengers(3);
+        request.setOrigin("B");
+        request.setDestination("D");
+        request.setPrice(300.0); // 3 * 100
+        request.setTravelDate(futureDate);
+
+        ReservationResponseDTO response = reservationService.createReservation(request);
+
+        assertNotNull(response);
+        assertNotNull(response.getReservationId());
+        assertEquals("B", response.getOrigin());
+        assertEquals("D", response.getDestination());
+        assertEquals(3, response.getPassengers());
+        assertEquals(3, response.getSeatNumbers().size());
+    }
+
+    @Test
+    @Order(15)
+    @DisplayName("Test 15: Independent seat availability for different dates")
+    void testIndependentDateAvailability() {
+        String date1 = "2026-02-10";
+        String date2 = "2026-02-11";
+
+        // Book all 40 seats for date1
+        ReservationRequestDTO request1 = new ReservationRequestDTO();
+        request1.setPassengers(40);
+        request1.setOrigin("A");
+        request1.setDestination("D");
+        request1.setPrice(6000.0); // 40 * 150
+        request1.setTravelDate(date1);
+
+        ReservationResponseDTO response1 = reservationService.createReservation(request1);
+        assertEquals(40, response1.getSeatNumbers().size());
+
+        // Check availability for date1 (should be 0)
+        AvailabilityRequestDTO availRequest1 = new AvailabilityRequestDTO();
+        availRequest1.setPassengers(1);
+        availRequest1.setOrigin("A");
+        availRequest1.setDestination("D");
+        availRequest1.setTravelDate(date1);
+
+        AvailabilityResponseDTO availResponse1 = availabilityService.checkAvailability(availRequest1);
+        assertEquals(0, availResponse1.getAvailableSeats().size(), 
+                    "No seats should be available for date1");
+
+        // Check availability for date2 (should have all 40 seats)
+        AvailabilityRequestDTO availRequest2 = new AvailabilityRequestDTO();
+        availRequest2.setPassengers(40);
+        availRequest2.setOrigin("A");
+        availRequest2.setDestination("D");
+        availRequest2.setTravelDate(date2);
+
+        AvailabilityResponseDTO availResponse2 = availabilityService.checkAvailability(availRequest2);
+        assertEquals(40, availResponse2.getAvailableSeats().size(), 
+                    "All 40 seats should be available for date2");
+    }
+
+    @Test
+    @Order(16)
+    @DisplayName("Test 16: Invalid date format should throw exception")
+    void testInvalidDateFormat() {
+        AvailabilityRequestDTO request = new AvailabilityRequestDTO();
+        request.setPassengers(2);
+        request.setOrigin("A");
+        request.setDestination("C");
+        request.setTravelDate("2026/02/15"); // Invalid format (should be YYYY-MM-DD)
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            availabilityService.checkAvailability(request);
+        });
+
+        assertTrue(exception.getMessage().toLowerCase().contains("date") || 
+                   exception.getMessage().toLowerCase().contains("format"), 
+                  "Error message should mention date format");
+    }
+
+    @Test
+    @Order(17)
+    @DisplayName("Test 17: Default to today if no date provided")
+    void testDefaultToToday() {
+        // Create request without date
+        AvailabilityRequestDTO request = new AvailabilityRequestDTO();
+        request.setPassengers(2);
+        request.setOrigin("A");
+        request.setDestination("B");
+
+        AvailabilityResponseDTO response = availabilityService.checkAvailability(request);
+
+        assertNotNull(response);
+        assertTrue(response.getAvailableSeats().size() >= 2, 
+                  "Should have available seats when no date specified (defaults to today)");
+    }
 }

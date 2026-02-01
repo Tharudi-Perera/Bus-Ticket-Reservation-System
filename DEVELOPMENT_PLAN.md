@@ -7,7 +7,7 @@ A REST API system for bus ticket reservation between 4 locations (A→B→C→D)
 
 ## Project Structure
 ```
-jvAssignment/
+Bus-Ticket-Reservation-System/
 ├── backend/                          # Backend REST API (WAR)
 │   ├── src/
 │   │   ├── main/
@@ -83,7 +83,6 @@ jvAssignment/
 - Create `Location.java` - Enum for locations (A, B, C, D)
 - Create `Route.java` - Represents a route with origin, destination, and price
 - Create `Reservation.java` - Represents a ticket reservation
-- Create `Trip.java` - Represents a bus trip (A→D or D→A)
 - Create `ReservationRequest.java` - DTO for reservation requests
 - Create `AvailabilityResponse.java` - DTO for availability API response
 - Create `ReservationResponse.java` - DTO for reservation API response
@@ -169,7 +168,6 @@ jvAssignment/
   - Endpoint: `/api/reservation`
   - Accepts: passengers, origin, destination, price
   - Returns: reservation number, seat numbers, journey details, total price
-- Create `BaseServlet.java` - Base class with common functionality
 - Configure `web.xml` with servlet mappings
 - Implement proper error handling and HTTP status codes
 

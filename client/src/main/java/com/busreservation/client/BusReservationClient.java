@@ -70,8 +70,27 @@ public class BusReservationClient {
      * Prints welcome banner.
      */
     private void printWelcomeBanner() {
+        // Get current date and time
+        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.format.DateTimeFormatter dateFormatter = java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM dd, yyyy");
+        String formattedDate = today.format(dateFormatter);
+        
+        // Get greeting based on time of day
+        java.time.LocalTime now = java.time.LocalTime.now();
+        String greeting;
+        if (now.isBefore(java.time.LocalTime.NOON)) {
+            greeting = "Good Morning";
+        } else if (now.isBefore(java.time.LocalTime.of(17, 0))) {
+            greeting = "Good Afternoon";
+        } else {
+            greeting = "Good Evening";
+        }
+        
         System.out.println("╔════════════════════════════════════════════════════════╗");
-        System.out.println("║        BUS RESERVATION SYSTEM - CLIENT APP             ║");
+        System.out.println("║           BUS RESERVATION SYSTEM                       ║");
+        System.out.println("║                                                        ║");
+        System.out.println("║  " + greeting + "!                                       ");
+        System.out.println("║  " + formattedDate);
         System.out.println("║                                                        ║");
         System.out.println("║  Route: A → B → C → D                                  ║");
         System.out.println("║  Total Seats: 40 (Rows 1-10, Seats A-D)                ║");
@@ -103,6 +122,7 @@ public class BusReservationClient {
         
         try {
             // Get input
+            String travelDate = getTravelDate();
             int passengers = getPassengerCount();
             String origin = getLocation("Origin");
             String destination = getLocation("Destination");
@@ -113,10 +133,10 @@ public class BusReservationClient {
                 return;
             }
             
-            // Create request
-            AvailabilityRequestDTO request = new AvailabilityRequestDTO(passengers, origin, destination);
+            // Create request with travel date
+            AvailabilityRequestDTO request = new AvailabilityRequestDTO(passengers, origin, destination, travelDate);
             
-            System.out.println("\n⏳ Checking availability...");
+            System.out.println("\n⏳ Checking availability for " + travelDate + "...");
             
             // Call API
             AvailabilityResponseDTO response = httpClient.post(
@@ -145,6 +165,7 @@ public class BusReservationClient {
         
         try {
             // Get input
+            String travelDate = getTravelDate();
             int passengers = getPassengerCount();
             String origin = getLocation("Origin");
             String destination = getLocation("Destination");
@@ -156,9 +177,9 @@ public class BusReservationClient {
             }
             
             // First check availability to get the price
-            AvailabilityRequestDTO availRequest = new AvailabilityRequestDTO(passengers, origin, destination);
+            AvailabilityRequestDTO availRequest = new AvailabilityRequestDTO(passengers, origin, destination, travelDate);
             
-            System.out.println("\n⏳ Checking seat availability and pricing...");
+            System.out.println("\n⏳ Checking seat availability and pricing for " + travelDate + "...");
             
             AvailabilityResponseDTO availResponse = httpClient.post(
                 AVAILABILITY_ENDPOINT,
@@ -168,6 +189,7 @@ public class BusReservationClient {
             
             // Display availability
             System.out.println("\n✓ Availability Check Results:");
+            System.out.println("  • Travel Date: " + travelDate);
             System.out.println("  • Available Seats: " + availResponse.getAvailableSeats().size());
             System.out.println("  • Price per Seat: Rs. " + String.format("%.2f", availResponse.getPricePerSeat()));
             System.out.println("  • Total Price: Rs. " + String.format("%.2f", availResponse.getTotalPrice()));
@@ -186,12 +208,13 @@ public class BusReservationClient {
                 return;
             }
             
-            // Create reservation request
+            // Create reservation request with travel date
             ReservationRequestDTO request = new ReservationRequestDTO(
                 passengers,
                 origin,
                 destination,
-                availResponse.getTotalPrice()
+                availResponse.getTotalPrice(),
+                travelDate
             );
             
             System.out.println("\n⏳ Processing reservation...");
@@ -232,6 +255,38 @@ public class BusReservationClient {
     }
     
     /**
+     * Gets travel date from user input.
+     */
+    private String getTravelDate() {
+        while (true) {
+            try {
+                System.out.print("Travel date (YYYY-MM-DD) or press Enter for today: ");
+                String input = scanner.nextLine().trim();
+                
+                // If empty, use today's date
+                if (input.isEmpty()) {
+                    String today = java.time.LocalDate.now().toString();
+                    System.out.println("  → Using today's date: " + today);
+                    return today;
+                }
+                
+                // Validate date format
+                java.time.LocalDate date = java.time.LocalDate.parse(input);
+                
+                // Check if date is not in the past
+                if (date.isBefore(java.time.LocalDate.now())) {
+                    System.out.println("✗ Travel date cannot be in the past. Please enter today or a future date.");
+                    continue;
+                }
+                
+                return input;
+            } catch (java.time.format.DateTimeParseException e) {
+                System.out.println("✗ Invalid date format. Please use YYYY-MM-DD format (e.g., 2026-02-15).");
+            }
+        }
+    }
+    
+    /**
      * Gets location from user input.
      */
     private String getLocation(String prompt) {
@@ -258,7 +313,7 @@ public class BusReservationClient {
         System.out.println("Price per Seat: Rs. " + String.format("%.2f", response.getPricePerSeat()));
         System.out.println("Total Price: Rs. " + String.format("%.2f", response.getTotalPrice()));
         System.out.println();
-
+        
         int availableCount = response.getAvailableSeats().size();
         int requestedCount = response.getPassengers();
         

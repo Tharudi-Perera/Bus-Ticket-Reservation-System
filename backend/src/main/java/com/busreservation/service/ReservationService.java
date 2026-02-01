@@ -52,7 +52,7 @@ public class ReservationService {
      * Create a new reservation.
      * Validates the request, allocates seats, and persists the reservation.
      * 
-     * @param request reservation request with passengers, origin, destination, price
+     * @param request reservation request with passengers, origin, destination, price, and optional travelDate
      * @return reservation response with reservation details
      * @throws IllegalArgumentException if request is invalid
      * @throws IllegalStateException if seats cannot be allocated
@@ -65,19 +65,20 @@ public class ReservationService {
         Location origin = Location.valueOf(request.getOrigin().toUpperCase());
         Location destination = Location.valueOf(request.getDestination().toUpperCase());
         
+        // Get travel date (use today if not provided)
+        String travelDate = request.getTravelDate();
+        if (travelDate == null || travelDate.trim().isEmpty()) {
+            travelDate = java.time.LocalDate.now().toString();
+        }
+        
         // Validate price
         if (!pricingService.validatePrice(origin, destination, request.getPassengers(), request.getPrice())) {
             throw new IllegalArgumentException("Invalid price. Expected: " + 
                 pricingService.calculateTotalPrice(origin, destination, request.getPassengers()));
         }
         
-        // Check availability
-        if (!availabilityService.hasAvailableSeats(origin, destination, request.getPassengers())) {
-            throw new IllegalStateException("Not enough seats available for the requested route");
-        }
-        
-        // Get available seats (API returns all available, we take only what we need)
-        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers());
+        // Check availability for the specified date
+        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers(), travelDate);
         
         if (availableSeats.size() < request.getPassengers()) {
             throw new IllegalStateException("Not enough seats available. Only " + availableSeats.size() + " seat(s) available.");
@@ -86,8 +87,8 @@ public class ReservationService {
         // Take only the number of seats needed
         List<String> seatsToReserve = availableSeats.subList(0, request.getPassengers());
         
-        // Reserve seats in repository
-        boolean reserved = busRepository.reserveSeats(origin, destination, seatsToReserve);
+        // Reserve seats in repository for the specified date
+        boolean reserved = busRepository.reserveSeats(origin, destination, seatsToReserve, travelDate);
         
         if (!reserved) {
             throw new IllegalStateException("Failed to reserve seats. They may have been taken by another user.");
@@ -95,7 +96,7 @@ public class ReservationService {
         
         // Create route and reservation
         Route route = new Route(origin, destination);
-        Reservation reservation = new Reservation(route, seatsToReserve, request.getPassengers(), request.getPrice());
+        Reservation reservation = new Reservation(route, seatsToReserve, request.getPassengers(), request.getPrice(), travelDate);
         
         // Save reservation
         reservationRepository.save(reservation);
@@ -183,6 +184,15 @@ public class ReservationService {
         
         if (request.getPrice() == null || request.getPrice() <= 0) {
             throw new IllegalArgumentException("Price must be greater than 0");
+        }
+        
+        // Validate travel date format if provided
+        if (request.getTravelDate() != null && !request.getTravelDate().trim().isEmpty()) {
+            try {
+                java.time.LocalDate.parse(request.getTravelDate());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid date format. Use YYYY-MM-DD");
+            }
         }
         
         // Validate locations exist

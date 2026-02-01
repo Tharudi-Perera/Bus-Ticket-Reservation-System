@@ -1,0 +1,48 @@
+services:
+  # Backend API Service
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: bus-reservation-backend
+    ports:
+      - "8081:8080"
+    networks:
+      - bus-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/bus-reservation/api/test"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    restart: unless-stopped
+    environment:
+      - JAVA_OPTS=-Xmx512m -Xms256m
+    labels:
+      - "com.busreservation.service=backend"
+      - "com.busreservation.version=1.0.0"
+
+  # Client Application (interactive mode)
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: bus-reservation-client
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - bus-network
+    environment:
+      - API_URL=http://backend:8080/bus-reservation
+      - TZ=Asia/Kolkata
+    stdin_open: true
+    tty: true
+    labels:
+      - "com.busreservation.service=client"
+      - "com.busreservation.version=1.0.0"
+
+networks:
+  bus-network:
+    driver: bridge
+    name: bus-reservation-network

@@ -185,4 +185,22 @@ public class ValidationUtil {
     public static String sanitize(String value) {
         return value == null ? null : value.trim();
     }
+
+    /**
+    * Validate trip date.
+    * Date must be in format YYYY-MM-DD and cannot be in the past.
+    * 
+    * @param tripDate trip date string
+    * @throws IllegalArgumentException if validation fails
+    */
+    public static void validateTripDate(String tripDate) {
+    validateNotEmpty(tripDate, "Trip date");
+    
+    try {
+        DateUtil.validateTripDate(tripDate);
+    } catch (IllegalArgumentException e) {
+        throw new IllegalArgumentException(e.getMessage());
+    }
+    }
+
 }

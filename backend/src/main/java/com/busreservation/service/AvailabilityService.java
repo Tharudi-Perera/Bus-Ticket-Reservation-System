@@ -4,8 +4,11 @@ import com.busreservation.dto.AvailabilityRequestDTO;
 import com.busreservation.dto.AvailabilityResponseDTO;
 import com.busreservation.entity.Location;
 import com.busreservation.repository.BusRepository;
+import com.busreservation.util.DateUtil;
+import com.busreservation.util.ValidationUtil;
 
 import java.util.List;
+import java.time.LocalDate;
 
 /**
  * Service for checking seat availability for routes.
@@ -50,9 +53,12 @@ public class AvailabilityService {
         // Parse locations
         Location origin = Location.valueOf(request.getOrigin().toUpperCase());
         Location destination = Location.valueOf(request.getDestination().toUpperCase());
+
+        // Parse and validate trip date
+        LocalDate tripDate = DateUtil.validateTripDate(request.getTripDate());
         
-        // Get available seats
-        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers());
+        // Get available seats for this specific date
+        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, tripDate, request.getPassengers());
         
         // Calculate pricing
         double pricePerSeat = pricingService.calculatePrice(origin, destination);
@@ -65,32 +71,35 @@ public class AvailabilityService {
             pricePerSeat,
             request.getPassengers(),
             request.getOrigin(),
-            request.getDestination()
+            request.getDestination(),
+            request.getTripDate()
         );
     }
     
     /**
-     * Check if enough seats are available for a route.
+     * Check if enough seats are available for a route and date.
      * 
      * @param origin starting location
      * @param destination ending location
+     * @param tripDate trip date
      * @param passengers number of passengers
      * @return true if enough seats available, false otherwise
      */
-    public boolean hasAvailableSeats(Location origin, Location destination, int passengers) {
-        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, passengers);
+    public boolean hasAvailableSeats(Location origin, Location destination, LocalDate tripDate, int passengers) {
+        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, tripDate, passengers);
         return !availableSeats.isEmpty();
     }
     
     /**
-     * Get count of available seats for a route.
+     * Get count of available seats for a route and date.
      * 
      * @param origin starting location
      * @param destination ending location
+     * @param tripDate trip date
      * @return number of available seats
      */
-    public int getAvailableSeatsCount(Location origin, Location destination) {
-        return busRepository.getAvailableSeats(origin, destination, busRepository.getTotalSeats()).size();
+    public int getAvailableSeatsCount(Location origin, Location destination, LocalDate tripDate) {
+        return busRepository.getAvailableSeats(origin, destination, tripDate, busRepository.getTotalSeats()).size();
     }
     
     /**
@@ -103,7 +112,7 @@ public class AvailabilityService {
         if (request == null) {
             throw new IllegalArgumentException("Request cannot be null");
         }
-        
+
         if (request.getPassengers() < 1) {
             throw new IllegalArgumentException("Number of passengers must be at least 1");
         }
@@ -119,6 +128,8 @@ public class AvailabilityService {
         if (request.getDestination() == null || request.getDestination().trim().isEmpty()) {
             throw new IllegalArgumentException("Destination cannot be null or empty");
         }
+
+        ValidationUtil.validateTripDate(request.getTripDate());
         
         // Validate locations exist
         try {

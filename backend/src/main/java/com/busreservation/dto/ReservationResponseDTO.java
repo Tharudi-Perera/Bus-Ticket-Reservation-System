@@ -28,11 +28,14 @@ public class ReservationResponseDTO {
     @JsonProperty("reservationTime")
     private String reservationTime;
 
+    @JsonProperty("tripDate")
+    private String tripDate;
+
     public ReservationResponseDTO() {
     }
 
     public ReservationResponseDTO(String reservationId, List<String> seatNumbers, String origin,
-                                String destination, int passengers, double totalPrice, String reservationTime) {
+                                String destination, int passengers, double totalPrice, String reservationTime, String tripDate) {
         this.reservationId = reservationId;
         this.seatNumbers = seatNumbers;
         this.origin = origin;
@@ -40,6 +43,7 @@ public class ReservationResponseDTO {
         this.passengers = passengers;
         this.totalPrice = totalPrice;
         this.reservationTime = reservationTime;
+        this.tripDate = tripDate;
     }
 
     public String getReservationId() {
@@ -96,5 +100,13 @@ public class ReservationResponseDTO {
 
     public void setReservationTime(String reservationTime) {
         this.reservationTime = reservationTime;
+    }
+
+    public String getTripDate() {
+        return tripDate;
+    }
+
+    public void setTripDate(String tripDate) {
+        this.tripDate = tripDate;
     }
 }

@@ -10,7 +10,10 @@ import com.busreservation.repository.ReservationRepository;
 import com.busreservation.service.AvailabilityService;
 import com.busreservation.service.PricingService;
 import com.busreservation.service.ReservationService;
+import com.busreservation.util.DateUtil;
+
 import org.junit.jupiter.api.*;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -27,6 +30,10 @@ class BusReservationSystemTest {
     private static BusRepository busRepository;
     private static ReservationRepository reservationRepository;
 
+    // Test date (tomorrow)
+    private static String testDate;
+
+
     @BeforeAll
     static void setUpAll() {
         pricingService = PricingService.getInstance();
@@ -34,6 +41,9 @@ class BusReservationSystemTest {
         reservationService = ReservationService.getInstance();
         busRepository = BusRepository.getInstance();
         reservationRepository = ReservationRepository.getInstance();
+
+        // Use tomorrow's date for all tests
+        testDate = DateUtil.formatDate(LocalDate.now().plusDays(1));
     }
 
     @BeforeEach
@@ -80,6 +90,7 @@ class BusReservationSystemTest {
         request.setPassengers(2);
         request.setOrigin("A");
         request.setDestination("D");
+        request.setTripDate(testDate);
 
         AvailabilityResponseDTO response = availabilityService.checkAvailability(request);
 
@@ -87,6 +98,7 @@ class BusReservationSystemTest {
         assertEquals("A", response.getOrigin(), "Origin should be A");
         assertEquals("D", response.getDestination(), "Destination should be D");
         assertEquals(2, response.getPassengers(), "Should have 2 passengers");
+        assertEquals(testDate, response.getTripDate(), "Trip date should match");
         assertEquals(300.0, response.getTotalPrice(), "Total price should be Rs. 300 (2 * 150)");
         assertNotNull(response.getAvailableSeats(), "Available seats should not be null");
         assertTrue(response.getAvailableSeats().size() > 0, "Should have available seats");
@@ -101,6 +113,8 @@ class BusReservationSystemTest {
         request.setOrigin("A");
         request.setDestination("C");
         request.setPrice(200.0); // 2 passengers * 100.0 per passenger
+        request.setTripDate(testDate);
+
 
         ReservationResponseDTO response = reservationService.createReservation(request);
 
@@ -109,6 +123,7 @@ class BusReservationSystemTest {
         assertEquals("A", response.getOrigin(), "Origin should be A");
         assertEquals("C", response.getDestination(), "Destination should be C");
         assertEquals(2, response.getPassengers(), "Should have 2 passengers");
+        //assertEquals(testDate, response.getTripDate(), "Trip date should match");
         assertEquals(200.0, response.getTotalPrice(), "Total price should be Rs. 200");
         assertEquals(2, response.getSeatNumbers().size(), "Should have 2 seats assigned");
     }
@@ -122,6 +137,7 @@ class BusReservationSystemTest {
         request.setOrigin("A");
         request.setDestination("C");
         request.setPrice(150.0); // Incorrect: should be 200.0
+        request.setTripDate(testDate);
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             reservationService.createReservation(request);
@@ -139,6 +155,7 @@ class BusReservationSystemTest {
         request.setPassengers(2);
         request.setOrigin("X"); // Invalid location
         request.setDestination("D");
+        request.setTripDate(testDate);
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             availabilityService.checkAvailability(request);
@@ -157,6 +174,7 @@ class BusReservationSystemTest {
         request.setPassengers(0);
         request.setOrigin("A");
         request.setDestination("D");
+        request.setTripDate(testDate);
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             availabilityService.checkAvailability(request);
@@ -174,6 +192,7 @@ class BusReservationSystemTest {
         request.setPassengers(2);
         request.setOrigin("A");
         request.setDestination("A");
+        request.setTripDate(testDate);
 
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             availabilityService.checkAvailability(request);
@@ -193,6 +212,7 @@ class BusReservationSystemTest {
         request1.setOrigin("A");
         request1.setDestination("B");
         request1.setPrice(100.0);
+        request1.setTripDate(testDate);
 
         ReservationResponseDTO response1 = reservationService.createReservation(request1);
         assertNotNull(response1.getReservationId());
@@ -203,6 +223,7 @@ class BusReservationSystemTest {
         request2.setOrigin("B");
         request2.setDestination("C");
         request2.setPrice(150.0);
+        request2.setTripDate(testDate);
 
         ReservationResponseDTO response2 = reservationService.createReservation(request2);
         assertNotNull(response2.getReservationId());
@@ -225,6 +246,7 @@ class BusReservationSystemTest {
         availRequest.setPassengers(40);  // Request all seats to see full availability
         availRequest.setOrigin("A");
         availRequest.setDestination("D");
+        availRequest.setTripDate(testDate);
 
         AvailabilityResponseDTO availResponse1 = availabilityService.checkAvailability(availRequest);
         int initialAvailability = availResponse1.getAvailableSeats().size();
@@ -235,6 +257,7 @@ class BusReservationSystemTest {
         reservRequest.setOrigin("A");
         reservRequest.setDestination("D");
         reservRequest.setPrice(750.0); // 5 * 150
+        reservRequest.setTripDate(testDate);
 
         reservationService.createReservation(reservRequest);
 
@@ -278,6 +301,7 @@ class BusReservationSystemTest {
             request.setOrigin("A");
             request.setDestination("B");
             request.setPrice(50.0);
+            request.setTripDate(testDate);
             reservationService.createReservation(request);
         }
 
@@ -296,10 +320,59 @@ class BusReservationSystemTest {
         availRequest.setPassengers(40);  // Request all to check full availability
         availRequest.setOrigin("A");
         availRequest.setDestination("D");
+        availRequest.setTripDate(testDate);
         AvailabilityResponseDTO availResponse = availabilityService.checkAvailability(availRequest);
 
         // Should have all 40 seats available
         assertTrue(availResponse.getAvailableSeats().size() >= 35, 
                   "Should have most seats available after reset. Got: " + availResponse.getAvailableSeats().size());
+    }
+
+     @Test
+    @Order(13)
+    @DisplayName("Test 13: Past date should throw exception")
+    void testPastDate() {
+        String pastDate = DateUtil.formatDate(LocalDate.now().minusDays(1));
+        
+        AvailabilityRequestDTO request = new AvailabilityRequestDTO();
+        request.setPassengers(2);
+        request.setOrigin("A");
+        request.setDestination("C");
+        request.setTripDate(pastDate);
+
+        Exception exception = assertThrows(IllegalArgumentException.class, () -> {
+            availabilityService.checkAvailability(request);
+        });
+
+        assertTrue(exception.getMessage().toLowerCase().contains("past"), 
+                  "Error message should mention past date");
+    }
+    
+    @Test
+    @Order(14)
+    @DisplayName("Test 14: Different dates have separate seat availability")
+    void testDifferentDatesHaveSeparateAvailability() {
+        String date1 = DateUtil.formatDate(LocalDate.now().plusDays(1));
+        String date2 = DateUtil.formatDate(LocalDate.now().plusDays(2));
+        
+        // Book seats for date1
+        ReservationRequestDTO request1 = new ReservationRequestDTO();
+        request1.setPassengers(5);
+        request1.setOrigin("A");
+        request1.setDestination("C");
+        request1.setPrice(500.0);
+        request1.setTripDate(date1);
+        reservationService.createReservation(request1);
+        
+        // Check availability for date2 (should have all 40 seats)
+        AvailabilityRequestDTO availRequest = new AvailabilityRequestDTO();
+        availRequest.setPassengers(40);
+        availRequest.setOrigin("A");
+        availRequest.setDestination("C");
+        availRequest.setTripDate(date2);
+        AvailabilityResponseDTO availResponse = availabilityService.checkAvailability(availRequest);
+        
+        assertEquals(40, availResponse.getAvailableSeats().size(),
+                    "Date2 should have all 40 seats available");
     }
 }

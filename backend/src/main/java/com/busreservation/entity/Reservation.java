@@ -1,6 +1,7 @@
 package com.busreservation.entity;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
@@ -10,6 +11,7 @@ import java.util.UUID;
  */
 public class Reservation {
     private final String reservationId;
+    private final LocalDate tripDate;
     private final Route route;
     private final List<String> seatNumbers;
     private final int passengerCount;
@@ -18,14 +20,15 @@ public class Reservation {
 
     /**
      * Create a new reservation.
-     * @param route the route being booked
+     * @param tripDate the date of the trip
      * @param seatNumbers list of assigned seat numbers
      * @param passengerCount number of passengers
      * @param totalPrice total price for the reservation
      */
-    public Reservation(Route route, List<String> seatNumbers, int passengerCount, double totalPrice) {
+    public Reservation(LocalDate tripDate, Route route, List<String> seatNumbers, int passengerCount, double totalPrice) {
         this.reservationId = generateReservationId();
         this.route = route;
+        this.tripDate = tripDate;
         this.seatNumbers = seatNumbers;
         this.passengerCount = passengerCount;
         this.totalPrice = totalPrice;
@@ -47,6 +50,11 @@ public class Reservation {
     public String getReservationId() {
         return reservationId;
     }
+
+    public LocalDate getTripDate() { 
+        return tripDate; 
+    }
+
 
     /**
      * Get the route.
@@ -105,6 +113,7 @@ public class Reservation {
     public String toString() {
         return "Reservation{" +
                 "id='" + reservationId + '\'' +
+                ", tripDate=" + tripDate +
                 ", route=" + route +
                 ", seats=" + seatNumbers +
                 ", passengers=" + passengerCount +

@@ -4,6 +4,7 @@ import com.busreservation.entity.Location;
 import com.busreservation.entity.Seat;
 
 import java.util.*;
+import java.time.LocalDate;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -17,17 +18,19 @@ public class BusRepository {
     // All 40 seats (1A-10D)
     private final List<Seat> seats;
     
-    // Track occupied seats per route segment (e.g., "A-B", "B-C")
-    // Key: "Origin-Destination", Value: Set of occupied seat numbers
-    private final Map<String, Set<String>> routeSegmentOccupancy;
+    // Track occupied seats per route segment (e.g., "A-B", "B-C") and per DATE
+    // Key format: "2025-09-09:A-B" (date:segment)
+    // Value: Set of occupied seat numbers for that date and segment
+    private final Map<String, Set<String>> dateSegmentOccupancy;
     
     /**
      * Private constructor initializes all seats and occupancy tracking.
      */
     private BusRepository() {
         this.seats = initializeSeats();
-        this.routeSegmentOccupancy = new ConcurrentHashMap<>();
+        this.dateSegmentOccupancy = new ConcurrentHashMap<>();
         initializeRouteSegments();
+
     }
     
     /**
@@ -70,7 +73,7 @@ public class BusRepository {
         for (int i = 0; i < locations.length; i++) {
             for (int j = i + 1; j < locations.length; j++) {
                 String segment = locations[i].name() + "-" + locations[j].name();
-                routeSegmentOccupancy.put(segment, ConcurrentHashMap.newKeySet());
+                dateSegmentOccupancy.put(segment, ConcurrentHashMap.newKeySet());
             }
         }
         
@@ -78,27 +81,29 @@ public class BusRepository {
         for (int i = locations.length - 1; i >= 0; i--) {
             for (int j = i - 1; j >= 0; j--) {
                 String segment = locations[i].name() + "-" + locations[j].name();
-                routeSegmentOccupancy.put(segment, ConcurrentHashMap.newKeySet());
+                dateSegmentOccupancy.put(segment, ConcurrentHashMap.newKeySet());
             }
         }
     }
     
     /**
-     * Get available seats for a specific route.
+     * Get available seats for a specific route and date.
      * A seat is available if it's not occupied on any segment of the route.
      * 
      * @param origin starting location
      * @param destination ending location
+     * @param tripDate trip date
      * @param count number of seats needed
      * @return List of available seat numbers, or empty list if not enough available
      */
-    public synchronized List<String> getAvailableSeats(Location origin, Location destination, int count) {
+    public synchronized List<String> getAvailableSeats(Location origin, Location destination, LocalDate tripDate, int count) {
         List<String> segments = getRouteSegments(origin, destination);
         Set<String> occupiedSeats = new HashSet<>();
         
         // Collect all occupied seats across all segments in the route
         for (String segment : segments) {
-            occupiedSeats.addAll(routeSegmentOccupancy.getOrDefault(segment, Collections.emptySet()));
+            String dateSegmentKey = createDateSegmentKey(tripDate, segment);
+            occupiedSeats.addAll(dateSegmentOccupancy.getOrDefault(dateSegmentKey, Collections.emptySet()));
         }
         
         // Find available seats (return ALL available seats, not limited by request count)
@@ -119,23 +124,40 @@ public class BusRepository {
      * @param seatNumbers list of seat numbers to reserve
      * @return true if reservation successful, false otherwise
      */
-    public synchronized boolean reserveSeats(Location origin, Location destination, List<String> seatNumbers) {
+    public synchronized boolean reserveSeats(Location origin, Location destination, LocalDate tripDate, List<String> seatNumbers) {
         List<String> segments = getRouteSegments(origin, destination);
         
         // Verify all seats are still available before reserving
-        List<String> availableSeats = getAvailableSeats(origin, destination, seatNumbers.size());
+        List<String> availableSeats = getAvailableSeats(origin, destination, tripDate, seatNumbers.size());
         if (!availableSeats.containsAll(seatNumbers)) {
             return false; // Some seats are no longer available
         }
         
         // Reserve seats for all segments in the route
         for (String segment : segments) {
-            Set<String> occupiedSeatsInSegment = routeSegmentOccupancy.get(segment);
-            occupiedSeatsInSegment.addAll(seatNumbers);
+            String dateSegmentKey = createDateSegmentKey(tripDate, segment);
+            Set<String> occupiedSeatsInSegment = dateSegmentOccupancy.computeIfAbsent(
+                dateSegmentKey, 
+                k -> ConcurrentHashMap.newKeySet()
+            );            occupiedSeatsInSegment.addAll(seatNumbers);
         }
         
         return true;
     }
+
+    /**
+     * Create a unique key for date + segment combination.
+     * Format: "YYYY-MM-DD:ORIGIN-DESTINATION"
+     * Example: "2025-09-09:A-B"
+     * 
+     * @param tripDate trip date
+     * @param segment segment string (e.g., "A-B")
+     * @return date-segment key
+     */
+    private String createDateSegmentKey(LocalDate tripDate, String segment) {
+        return tripDate.toString() + ":" + segment;
+    }
+
     
     /**
      * Get all route segments for a given origin and destination.
@@ -180,15 +202,26 @@ public class BusRepository {
      * @param segment segment key (e.g., "A-B")
      * @return Set of occupied seat numbers
      */
-    public Set<String> getSegmentOccupancy(String segment) {
-        return new HashSet<>(routeSegmentOccupancy.getOrDefault(segment, Collections.emptySet()));
+    public Set<String> getSegmentOccupancy(LocalDate tripDate, String segment) {
+        String dateSegmentKey = createDateSegmentKey(tripDate, segment);
+        return new HashSet<>(dateSegmentOccupancy.getOrDefault(dateSegmentKey, Collections.emptySet()));
     }
     
     /**
      * Reset all seat occupancy (for testing purposes).
      */
     public synchronized void reset() {
-        routeSegmentOccupancy.clear();
+        dateSegmentOccupancy.clear();
         initializeRouteSegments();
+    }
+
+    /**
+     * Clear reservations for a specific date (for testing/admin).
+     * 
+     * @param tripDate date to clear
+     */
+    public synchronized void clearDate(LocalDate tripDate) {
+        String datePrefix = tripDate.toString() + ":";
+        dateSegmentOccupancy.keySet().removeIf(key -> key.startsWith(datePrefix));
     }
 }

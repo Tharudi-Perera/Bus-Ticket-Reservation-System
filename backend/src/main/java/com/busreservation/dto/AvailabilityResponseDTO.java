@@ -25,17 +25,22 @@ public class AvailabilityResponseDTO {
     @JsonProperty("destination")
     private String destination;
 
+    @JsonProperty("tripDate")
+    private String tripDate;
+
     public AvailabilityResponseDTO() {
     }
 
     public AvailabilityResponseDTO(List<String> availableSeats, double totalPrice, double pricePerSeat,
-                                 int passengers, String origin, String destination) {
+                                 int passengers, String origin, String destination, String tripDate) {
         this.availableSeats = availableSeats;
         this.totalPrice = totalPrice;
         this.pricePerSeat = pricePerSeat;
         this.passengers = passengers;
         this.origin = origin;
         this.destination = destination;
+        this.tripDate = tripDate;
+
     }
 
     public List<String> getAvailableSeats() {
@@ -84,5 +89,13 @@ public class AvailabilityResponseDTO {
 
     public void setDestination(String destination) {
         this.destination = destination;
+    }
+
+    public String getTripDate() {
+        return tripDate;
+    }   
+
+    public void setTripDate(String tripDate) {
+        this.tripDate = tripDate;
     }
 }

@@ -12,16 +12,20 @@ public class AvailabilityRequestDTO {
     @JsonProperty("origin")
     private String origin;
 
+    @JsonProperty("tripDate")
+    private String tripDate;
+
     @JsonProperty("destination")
     private String destination;
 
     public AvailabilityRequestDTO() {
     }
 
-    public AvailabilityRequestDTO(int passengers, String origin, String destination) {
+    public AvailabilityRequestDTO(int passengers, String origin, String destination, String tripDate) {
         this.passengers = passengers;
         this.origin = origin;
         this.destination = destination;
+        this.tripDate = tripDate;
     }
 
     public int getPassengers() {
@@ -48,12 +52,21 @@ public class AvailabilityRequestDTO {
         this.destination = destination;
     }
 
+        public String getTripDate() {
+        return tripDate;
+    }
+
+    public void setTripDate(String tripDate) {
+        this.tripDate = tripDate;
+    }
+
     @Override
     public String toString() {
         return "AvailabilityRequestDTO{" +
                 "passengers=" + passengers +
                 ", origin='" + origin + '\'' +
                 ", destination='" + destination + '\'' +
+                ", tripDate='" + tripDate + '\'' +
                 '}';
     }
 }

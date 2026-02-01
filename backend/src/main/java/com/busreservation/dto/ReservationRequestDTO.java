@@ -18,14 +18,18 @@ public class ReservationRequestDTO {
     @JsonProperty("price")
     private Double price;
 
+    @JsonProperty("tripDate")
+    private String tripDate;
+
     public ReservationRequestDTO() {
     }
 
-    public ReservationRequestDTO(int passengers, String origin, String destination, Double price) {
+    public ReservationRequestDTO(int passengers, String origin, String destination, Double price, String tripDate) {
         this.passengers = passengers;
         this.origin = origin;
         this.destination = destination;
         this.price = price;
+        this.tripDate = tripDate;
     }
 
     public int getPassengers() {
@@ -60,6 +64,14 @@ public class ReservationRequestDTO {
         this.price = price;
     }
 
+    public String getTripDate() {
+        return tripDate;
+    }
+
+    public void setTripDate(String tripDate) {
+        this.tripDate = tripDate;
+    }
+
     @Override
     public String toString() {
         return "ReservationRequestDTO{" +
@@ -67,6 +79,7 @@ public class ReservationRequestDTO {
                 ", origin='" + origin + '\'' +
                 ", destination='" + destination + '\'' +
                 ", price=" + price +
+                ", tripDate='" + tripDate + '\'' +
                 '}';
     }
 }

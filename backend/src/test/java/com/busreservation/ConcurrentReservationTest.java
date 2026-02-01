@@ -6,10 +6,12 @@ import com.busreservation.repository.ReservationRepository;
 import com.busreservation.service.AvailabilityService;
 import com.busreservation.service.PricingService;
 import com.busreservation.service.ReservationService;
+import com.busreservation.util.DateUtil;
 import com.busreservation.dto.ReservationRequestDTO;
 import com.busreservation.dto.ReservationResponseDTO;
 import org.junit.jupiter.api.*;
 
+import java.time.LocalDate;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,6 +33,7 @@ public class ConcurrentReservationTest {
     private static PricingService pricingService;
     private static AvailabilityService availabilityService;
     private static ReservationService reservationService;
+    private static String testDate;
 
     @BeforeAll
     public static void setup() {
@@ -44,6 +47,9 @@ public class ConcurrentReservationTest {
         pricingService = PricingService.getInstance();
         availabilityService = AvailabilityService.getInstance();
         reservationService = ReservationService.getInstance();
+
+        // Use tomorrow's date for all tests
+        testDate = DateUtil.formatDate(LocalDate.now().plusDays(1));
     }
 
     @BeforeEach
@@ -75,6 +81,7 @@ public class ConcurrentReservationTest {
         setupRequest.setOrigin("A");
         setupRequest.setDestination("B");
         setupRequest.setPrice(1750.0); // 35 * 50
+        setupRequest.setTripDate(testDate);
 
         ReservationResponseDTO setupResponse = reservationService.createReservation(setupRequest);
         assertNotNull(setupResponse);
@@ -107,6 +114,7 @@ public class ConcurrentReservationTest {
                     request.setOrigin("A");
                     request.setDestination("B");
                     request.setPrice(250.0); // 5 * 50
+                    request.setTripDate(testDate);
 
                     ReservationResponseDTO response = reservationService.createReservation(request);
                     
@@ -187,6 +195,7 @@ public class ConcurrentReservationTest {
         setupRequest.setOrigin("A");
         setupRequest.setDestination("D");
         setupRequest.setPrice(5850.0); // 39 * 150
+        setupRequest.setTripDate(testDate);
 
         ReservationResponseDTO setupResponse = reservationService.createReservation(setupRequest);
         assertNotNull(setupResponse);
@@ -215,6 +224,7 @@ public class ConcurrentReservationTest {
                     request.setOrigin("A");
                     request.setDestination("D");
                     request.setPrice(150.0);
+                    request.setTripDate(testDate);
 
                     ReservationResponseDTO response = reservationService.createReservation(request);
                     
@@ -290,6 +300,7 @@ public class ConcurrentReservationTest {
                     request.setOrigin("B");
                     request.setDestination("D");
                     request.setPrice(seatsToBook * 100.0); // B→D = 2 segments * 50
+                    request.setTripDate(testDate);
 
                     ReservationResponseDTO response = reservationService.createReservation(request);
                     
@@ -351,4 +362,269 @@ public class ConcurrentReservationTest {
         System.out.println("✓ No overselling detected");
         System.out.println("=".repeat(80) + "\n");
     }
+
+
+    /**
+ * Test Scenario 4: Rapid Sequential Bookings - Stress Test
+ * 
+ * Test: 50 users rapidly book 1 seat each
+ * Expected: First 40 succeed, remaining 10 fail
+ */
+@Test
+@Order(4)
+public void testScenario4_RapidSequentialBookings_StressTest() throws InterruptedException {
+    System.out.println("\n" + "-".repeat(80));
+    System.out.println("SCENARIO 4: Rapid Sequential Bookings - 50 Users for 40 Seats");
+    System.out.println("-".repeat(80));
+
+    int numThreads = 50;
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    CountDownLatch startLatch = new CountDownLatch(1);
+    CountDownLatch endLatch = new CountDownLatch(numThreads);
+
+    AtomicInteger successCount = new AtomicInteger(0);
+    AtomicInteger failureCount = new AtomicInteger(0);
+    List<ReservationResponseDTO> allReservations = new CopyOnWriteArrayList<>();
+
+    System.out.println("\n🚀 Launching 50 concurrent users...");
+    for (int i = 0; i < numThreads; i++) {
+        final int userId = i + 1;
+        executor.submit(() -> {
+            try {
+                startLatch.await();
+                
+                ReservationRequestDTO request = new ReservationRequestDTO();
+                request.setPassengers(1);
+                request.setOrigin("A");
+                request.setDestination("B");
+                request.setPrice(50.0);
+                request.setTripDate(testDate);
+
+                ReservationResponseDTO response = reservationService.createReservation(request);
+                successCount.incrementAndGet();
+                allReservations.add(response);
+            } catch (Exception e) {
+                failureCount.incrementAndGet();
+            } finally {
+                endLatch.countDown();
+            }
+        });
+    }
+
+    startLatch.countDown();
+    boolean completed = endLatch.await(20, TimeUnit.SECONDS);
+    executor.shutdown();
+
+    System.out.println("\n📊 Results:");
+    System.out.println("   Successful: " + successCount.get());
+    System.out.println("   Failed: " + failureCount.get());
+
+    assertTrue(completed, "All threads should complete");
+    assertEquals(40, successCount.get(), "Exactly 40 users should succeed");
+    assertEquals(10, failureCount.get(), "10 users should fail");
+
+    Set<String> uniqueSeats = allReservations.stream()
+            .flatMap(r -> r.getSeatNumbers().stream())
+            .collect(Collectors.toSet());
+    assertEquals(40, uniqueSeats.size(), "All 40 seats should be unique");
+
+    System.out.println("✓ Scenario 4 PASSED: Stress test handled correctly");
+}
+
+/**
+ * Test Scenario 5: Mixed Routes Concurrent Bookings
+ * 
+ * Test: Multiple users booking different route segments simultaneously
+ * Expected: Proper isolation between different routes
+ */
+@Test
+@Order(5)
+public void testScenario5_MixedRoutes_ConcurrentBookings() throws InterruptedException {
+    System.out.println("\n" + "-".repeat(80));
+    System.out.println("SCENARIO 5: Mixed Routes - Concurrent Bookings");
+    System.out.println("-".repeat(80));
+
+    int numThreads = 8;
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    CountDownLatch startLatch = new CountDownLatch(1);
+    CountDownLatch endLatch = new CountDownLatch(numThreads);
+
+    AtomicInteger successCount = new AtomicInteger(0);
+    List<ReservationResponseDTO> allReservations = new CopyOnWriteArrayList<>();
+
+    String[][] routes = {
+        {"A", "B", "50.0"},
+        {"B", "C", "50.0"},
+        {"C", "D", "50.0"},
+        {"A", "C", "100.0"},
+        {"B", "D", "100.0"},
+        {"A", "D", "150.0"}
+    };
+
+    System.out.println("\n🚀 Launching 8 users with different routes...");
+    for (int i = 0; i < numThreads; i++) {
+        final int userId = i + 1;
+        final String[] route = routes[i % routes.length];
+        
+        executor.submit(() -> {
+            try {
+                startLatch.await();
+                
+                ReservationRequestDTO request = new ReservationRequestDTO();
+                request.setPassengers(5);
+                request.setOrigin(route[0]);
+                request.setDestination(route[1]);
+                request.setPrice(Double.parseDouble(route[2]) * 5);
+                request.setTripDate(testDate);
+
+                ReservationResponseDTO response = reservationService.createReservation(request);
+                successCount.incrementAndGet();
+                allReservations.add(response);
+                System.out.println("   User " + userId + " (" + route[0] + "→" + route[1] + "): ✓ Booked");
+            } catch (Exception e) {
+                System.out.println("   User " + userId + " (" + route[0] + "→" + route[1] + "): ✗ Failed");
+            } finally {
+                endLatch.countDown();
+            }
+        });
+    }
+
+    startLatch.countDown();
+    boolean completed = endLatch.await(15, TimeUnit.SECONDS);
+    executor.shutdown();
+
+    System.out.println("\n📊 Results: " + successCount.get() + " successful bookings");
+    assertTrue(completed, "All threads should complete");
+    assertTrue(successCount.get() > 0, "Some bookings should succeed");
+
+    System.out.println("✓ Scenario 5 PASSED: Mixed routes handled correctly");
+}
+
+/**
+ * Test Scenario 6: Rollback on Partial Failure
+ * 
+ * Test: Verify system handles partial booking failures correctly
+ */
+@Test
+@Order(6)
+public void testScenario6_PartialBooking_Rollback() throws InterruptedException {
+    System.out.println("\n" + "-".repeat(80));
+    System.out.println("SCENARIO 6: Partial Booking Rollback Test");
+    System.out.println("-".repeat(80));
+
+    // Book 38 seats first
+    ReservationRequestDTO setupRequest = new ReservationRequestDTO();
+    setupRequest.setPassengers(38);
+    setupRequest.setOrigin("A");
+    setupRequest.setDestination("B");
+    setupRequest.setPrice(1900.0);
+    setupRequest.setTripDate(testDate);
+    reservationService.createReservation(setupRequest);
+    
+    System.out.println("✓ Setup: 38 seats booked, 2 remaining");
+
+    int numThreads = 3;
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    CountDownLatch startLatch = new CountDownLatch(1);
+    CountDownLatch endLatch = new CountDownLatch(numThreads);
+
+    AtomicInteger successCount = new AtomicInteger(0);
+    AtomicInteger failureCount = new AtomicInteger(0);
+
+    System.out.println("\n🚀 3 users trying to book 3 seats each (only 2 available)...");
+    for (int i = 0; i < numThreads; i++) {
+        final int userId = i + 1;
+        executor.submit(() -> {
+            try {
+                startLatch.await();
+                
+                ReservationRequestDTO request = new ReservationRequestDTO();
+                request.setPassengers(3);
+                request.setOrigin("A");
+                request.setDestination("B");
+                request.setPrice(150.0);
+                request.setTripDate(testDate);
+
+                reservationService.createReservation(request);
+                successCount.incrementAndGet();
+                System.out.println("   User " + userId + ": ✓ Success");
+            } catch (Exception e) {
+                failureCount.incrementAndGet();
+                System.out.println("   User " + userId + ": ✗ Failed - " + e.getMessage());
+            } finally {
+                endLatch.countDown();
+            }
+        });
+    }
+
+    startLatch.countDown();
+    endLatch.await(10, TimeUnit.SECONDS);
+    executor.shutdown();
+
+    System.out.println("\n📊 Results:");
+    System.out.println("   Success: " + successCount.get());
+    System.out.println("   Failures: " + failureCount.get());
+
+    assertEquals(0, successCount.get(), "No user should succeed (3 seats > 2 available)");
+    assertEquals(3, failureCount.get(), "All 3 users should fail");
+
+    System.out.println("✓ Scenario 6 PASSED: Partial bookings correctly rejected");
+}
+
+/**
+ * Test Scenario 7: Peak Load Simulation
+ * 
+ * Test: Simulate peak booking time with varied booking sizes
+ */
+@Test
+@Order(7)
+public void testScenario7_PeakLoad_VariedSizes() throws InterruptedException {
+    System.out.println("\n" + "-".repeat(80));
+    System.out.println("SCENARIO 7: Peak Load - 20 Users with Varied Sizes");
+    System.out.println("-".repeat(80));
+
+    int numThreads = 20;
+    ExecutorService executor = Executors.newFixedThreadPool(numThreads);
+    CountDownLatch startLatch = new CountDownLatch(1);
+    CountDownLatch endLatch = new CountDownLatch(numThreads);
+
+    AtomicInteger totalBooked = new AtomicInteger(0);
+    Random random = new Random(789);
+
+    System.out.println("\n🚀 Simulating peak load...");
+    for (int i = 0; i < numThreads; i++) {
+        final int userId = i + 1;
+        final int seats = random.nextInt(5) + 1; // 1-5 seats
+        
+        executor.submit(() -> {
+            try {
+                startLatch.await();
+                
+                ReservationRequestDTO request = new ReservationRequestDTO();
+                request.setPassengers(seats);
+                request.setOrigin("A");
+                request.setDestination("C");
+                request.setPrice(seats * 100.0);
+                request.setTripDate(testDate);
+
+                ReservationResponseDTO response = reservationService.createReservation(request);
+                totalBooked.addAndGet(seats);
+                System.out.println("   User " + userId + ": ✓ Booked " + seats);
+            } catch (Exception e) {
+                System.out.println("   User " + userId + ": ✗ Failed");
+            } finally {
+                endLatch.countDown();
+            }
+        });
+    }
+
+    startLatch.countDown();
+    endLatch.await(20, TimeUnit.SECONDS);
+    executor.shutdown();
+
+    System.out.println("\n📊 Total booked: " + totalBooked.get() + " seats");
+    assertTrue(totalBooked.get() <= 40, "No overselling");
+    System.out.println("✓ Scenario 7 PASSED: Peak load handled correctly");
+}
+
 }

@@ -1,5 +1,5 @@
 # Bus-Ticket-Reservation-System
-Complete bus reservation system: thread-safe REST API backend (Java Servlets, Tomcat) + interactive CLI frontend (Java HttpClient). Implements ReentrantReadWriteLock for race-free booking, clean layered architecture, and RESTful design. No framework dependencies - pure Java mastery.
+Complete bus tickets reservation system: thread-safe REST API backend (Java Servlets, Tomcat) + interactive CLI frontend (Java HttpClient). Implements ReentrantReadWriteLock for race-free booking, clean layered architecture, and RESTful design. No framework dependencies - pure Java mastery.
 
 ## 📋 Table of Contents
 - [Implemented Features](#implemented-features)
@@ -187,16 +187,16 @@ docker run -it --network host bus-reservation-client
 ```
 
 ### Welcome Page
-![Welcome Page](images/Welcome_Page.png)
+<img src="images/Welcome_Page.png" width="600"/>
 
 ### Availability Check
-![Availability Check](images/Availability_Check.png)
+<img src="images/Availability_Check.png" width="600"/>
 
 ### Make Reservation
-![Make Reservation](images/Make_Reservation.png)
+<img src="images/Make_Reservation.png" width="600"/>
 
 ### Error Handling
-![Error Handling](images/Error.png)
+<img src="images/Error.png" width="600"/>
 
 ---
 

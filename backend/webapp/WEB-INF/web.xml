@@ -11,11 +11,5 @@
         REST API for bus ticket reservation system between 4 locations (A, B, C, D)
         with 40 seats.
     </description>
-    
-    <!-- Welcome file list -->
-    <welcome-file-list>
-        <welcome-file>index.html</welcome-file>
-    </welcome-file-list>
-    
-    
+      
 </web-app>

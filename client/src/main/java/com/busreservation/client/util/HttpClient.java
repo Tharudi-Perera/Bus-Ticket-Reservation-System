@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
@@ -54,7 +55,7 @@ public class HttpClient {
      */
     public <T> T post(String endpoint, Object requestBody, Class<T> responseType) throws IOException, ApiException {
         String fullUrl = baseUrl + endpoint;
-        URL url = new URL(fullUrl);
+        URL url = URI.create(fullUrl).toURL();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         
         try {
@@ -126,7 +127,7 @@ public class HttpClient {
      */
     public <T> T get(String endpoint, Class<T> responseType) throws IOException, ApiException {
         String fullUrl = baseUrl + endpoint;
-        URL url = new URL(fullUrl);
+        URL url = URI.create(fullUrl).toURL();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         
         try {

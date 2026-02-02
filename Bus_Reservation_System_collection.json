@@ -26,7 +26,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"B\"\n}"
+                    "raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"B\",\n  \"tripDate\": \"2026-04-15\"\n}"
 				},
 				"url": "http://localhost:8080/bus-reservation/api/availability"
 			}
@@ -43,7 +43,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"D\"\n}"
+					"raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"D\",\n  \"tripDate\": \"2026-04-15\"\n}"
 				},
 				"url": "http://localhost:8080/bus-reservation/api/availability"
 			}
@@ -60,7 +60,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"D\",\n  \"price\": 300.0\n}"
+					"raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"D\",\n  \"price\": 300.0,\n  \"tripDate\": \"2026-04-15\"\n}"
 				},
 				"url": "http://localhost:8080/bus-reservation/api/reservation"
 			}

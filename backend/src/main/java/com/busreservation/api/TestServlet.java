@@ -1,7 +1,6 @@
 package com.busreservation.api;
 
 import com.busreservation.util.HttpUtil;
-import com.busreservation.util.JsonUtil;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -19,6 +18,7 @@ import java.util.Map;
  * Provides a simple endpoint to verify the backend is running
  * Endpoint: GET /api/test
  */
+
 @WebServlet("/api/test")
 public class TestServlet extends HttpServlet {
 

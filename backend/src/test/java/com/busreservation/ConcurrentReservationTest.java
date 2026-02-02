@@ -1,6 +1,5 @@
 package com.busreservation;
 
-import com.busreservation.entity.Location;
 import com.busreservation.repository.BusRepository;
 import com.busreservation.repository.ReservationRepository;
 import com.busreservation.service.AvailabilityService;
@@ -9,6 +8,8 @@ import com.busreservation.service.ReservationService;
 import com.busreservation.dto.ReservationRequestDTO;
 import com.busreservation.dto.ReservationResponseDTO;
 import org.junit.jupiter.api.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -75,6 +76,7 @@ public class ConcurrentReservationTest {
         setupRequest.setOrigin("A");
         setupRequest.setDestination("B");
         setupRequest.setPrice(1750.0); // 35 * 50
+        setupRequest.setTravelDate(LocalDate.now().plusDays(15).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 
         ReservationResponseDTO setupResponse = reservationService.createReservation(setupRequest);
         assertNotNull(setupResponse);
@@ -107,6 +109,7 @@ public class ConcurrentReservationTest {
                     request.setOrigin("A");
                     request.setDestination("B");
                     request.setPrice(250.0); // 5 * 50
+                    request.setTravelDate(LocalDate.now().plusDays(15).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 
                     ReservationResponseDTO response = reservationService.createReservation(request);
                     
@@ -187,6 +190,7 @@ public class ConcurrentReservationTest {
         setupRequest.setOrigin("A");
         setupRequest.setDestination("D");
         setupRequest.setPrice(5850.0); // 39 * 150
+        setupRequest.setTravelDate(LocalDate.now().plusDays(15).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 
         ReservationResponseDTO setupResponse = reservationService.createReservation(setupRequest);
         assertNotNull(setupResponse);
@@ -215,6 +219,7 @@ public class ConcurrentReservationTest {
                     request.setOrigin("A");
                     request.setDestination("D");
                     request.setPrice(150.0);
+                    request.setTravelDate(LocalDate.now().plusDays(15).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 
                     ReservationResponseDTO response = reservationService.createReservation(request);
                     
@@ -290,6 +295,7 @@ public class ConcurrentReservationTest {
                     request.setOrigin("B");
                     request.setDestination("D");
                     request.setPrice(seatsToBook * 100.0); // B→D = 2 segments * 50
+                    request.setTravelDate(LocalDate.now().plusDays(15).format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
 
                     ReservationResponseDTO response = reservationService.createReservation(request);
                     
@@ -366,8 +372,9 @@ public class ConcurrentReservationTest {
         System.out.println("SCENARIO 4: Date-Based Concurrent Reservations");
         System.out.println("-".repeat(80));
 
-        String date1 = "2026-02-15";
-        String date2 = "2026-02-16";
+        // Dynamic dates - 15 and 16 days from now
+        String date1 = LocalDate.now().plusDays(15).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+        String date2 = LocalDate.now().plusDays(16).format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));
 
         int numThreads = 4;
         ExecutorService executor = Executors.newFixedThreadPool(numThreads);

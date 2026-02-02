@@ -8,9 +8,10 @@ import com.busreservation.entity.Route;
 import com.busreservation.repository.BusRepository;
 import com.busreservation.repository.ReservationRepository;
 
-import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Service for handling ticket reservations.
@@ -24,6 +25,12 @@ public class ReservationService {
     private final ReservationRepository reservationRepository;
     private final PricingService pricingService;
     private final AvailabilityService availabilityService;
+
+    // ReentrantLock for better concurrency control
+    private final ReentrantLock reservationLock = new ReentrantLock(true); // Fair lock - FIFO ordering
+    
+    // Timeout constant - must be less than client timeout (5s)
+    private static final int LOCK_TIMEOUT_SECONDS = 3;
     
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     
@@ -51,66 +58,94 @@ public class ReservationService {
     /**
      * Create a new reservation.
      * Validates the request, allocates seats, and persists the reservation.
+     * Uses ReentrantLock with timeout to prevent indefinite waiting under high load.
      * 
      * @param request reservation request with passengers, origin, destination, price, and optional travelDate
      * @return reservation response with reservation details
      * @throws IllegalArgumentException if request is invalid
-     * @throws IllegalStateException if seats cannot be allocated
+     * @throws IllegalStateException if seats cannot be allocated or system is too busy
      */
-    public synchronized ReservationResponseDTO createReservation(ReservationRequestDTO request) {
-        // Validate request
-        validateReservationRequest(request);
-        
-        // Parse locations
-        Location origin = Location.valueOf(request.getOrigin().toUpperCase());
-        Location destination = Location.valueOf(request.getDestination().toUpperCase());
-        
-        // Get travel date (use today if not provided)
-        String travelDate = request.getTravelDate();
-        if (travelDate == null || travelDate.trim().isEmpty()) {
-            travelDate = java.time.LocalDate.now().toString();
+    public ReservationResponseDTO createReservation(ReservationRequestDTO request) {
+        // Try to acquire lock with timeout
+        boolean lockAcquired = false;
+       
+        try {
+            // Attempt to acquire lock, wait maximum LOCK_TIMEOUT_SECONDS
+            lockAcquired = reservationLock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            
+            // If lock not acquired within timeout, fail fast
+            if (!lockAcquired) {
+                throw new IllegalStateException(
+                    "System is currently busy processing other reservations. " +
+                    "Please try again in a moment."
+                );
+            }
+                        
+            // Validate request
+            validateReservationRequest(request);
+              
+            // Parse locations
+            Location origin = Location.valueOf(request.getOrigin().toUpperCase());
+            Location destination = Location.valueOf(request.getDestination().toUpperCase());
+            
+            // Get travel date (use today if not provided)
+            String travelDate = request.getTravelDate();
+            if (travelDate == null || travelDate.trim().isEmpty()) {
+                travelDate = java.time.LocalDate.now().toString();
+            }
+            
+            // Validate price
+            if (!pricingService.validatePrice(origin, destination, request.getPassengers(), request.getPrice())) {
+                throw new IllegalArgumentException("Invalid price. Expected: " + 
+                    pricingService.calculateTotalPrice(origin, destination, request.getPassengers()));
+            }
+            
+            // Check availability for the specified date
+            List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers(), travelDate);
+            
+            if (availableSeats.size() < request.getPassengers()) {
+                throw new IllegalStateException("Not enough seats available. Only " + availableSeats.size() + " seat(s) available.");
+            }
+            
+            // Take only the number of seats needed
+            List<String> seatsToReserve = availableSeats.subList(0, request.getPassengers());
+            
+            // Reserve seats in repository for the specified date
+            boolean reserved = busRepository.reserveSeats(origin, destination, seatsToReserve, travelDate);
+            
+            if (!reserved) {
+                throw new IllegalStateException("Failed to reserve seats. They may have been taken by another user.");
+            }
+            
+            // Create route and reservation
+            Route route = new Route(origin, destination);
+            Reservation reservation = new Reservation(route, seatsToReserve, request.getPassengers(), request.getPrice(), travelDate);
+            
+            // Save reservation
+            reservationRepository.save(reservation);
+            
+            // Build response
+            return new ReservationResponseDTO(
+                reservation.getReservationId(),
+                seatsToReserve,
+                request.getOrigin(),
+                request.getDestination(),
+                request.getPassengers(),
+                request.getPrice(),
+                DATE_FORMATTER.format(reservation.getReservationTime())
+            );
+            
+        } catch (InterruptedException e) {  // Handle thread interruption
+            Thread.currentThread().interrupt(); // Restore interrupt status
+            throw new IllegalStateException(
+                "Reservation request was interrupted. Please try again.",
+                e
+            );
+        } finally {  // Always release lock if acquired
+            if (lockAcquired) {
+                reservationLock.unlock();
+            }
         }
-        
-        // Validate price
-        if (!pricingService.validatePrice(origin, destination, request.getPassengers(), request.getPrice())) {
-            throw new IllegalArgumentException("Invalid price. Expected: " + 
-                pricingService.calculateTotalPrice(origin, destination, request.getPassengers()));
-        }
-        
-        // Check availability for the specified date
-        List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers(), travelDate);
-        
-        if (availableSeats.size() < request.getPassengers()) {
-            throw new IllegalStateException("Not enough seats available. Only " + availableSeats.size() + " seat(s) available.");
-        }
-        
-        // Take only the number of seats needed
-        List<String> seatsToReserve = availableSeats.subList(0, request.getPassengers());
-        
-        // Reserve seats in repository for the specified date
-        boolean reserved = busRepository.reserveSeats(origin, destination, seatsToReserve, travelDate);
-        
-        if (!reserved) {
-            throw new IllegalStateException("Failed to reserve seats. They may have been taken by another user.");
-        }
-        
-        // Create route and reservation
-        Route route = new Route(origin, destination);
-        Reservation reservation = new Reservation(route, seatsToReserve, request.getPassengers(), request.getPrice(), travelDate);
-        
-        // Save reservation
-        reservationRepository.save(reservation);
-        
-        // Build response
-        return new ReservationResponseDTO(
-            reservation.getReservationId(),
-            seatsToReserve,
-            request.getOrigin(),
-            request.getDestination(),
-            request.getPassengers(),
-            request.getPrice(),
-            DATE_FORMATTER.format(reservation.getReservationTime())
-        );
     }
     
     /**

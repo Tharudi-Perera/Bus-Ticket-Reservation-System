@@ -20,6 +20,7 @@ import java.io.IOException;
  * 
  * Request Body:
  * {
+ *   "tripdate": "2026-02-14",
  *   "passengers": 2,
  *   "origin": "A",
  *   "destination": "C",
@@ -37,6 +38,7 @@ import java.io.IOException;
  *   "reservationTime": "2026-01-29 12:45:00"
  * }
  */
+
 @WebServlet(name = "ReservationServlet", urlPatterns = {"/api/reservation"})
 public class ReservationServlet extends HttpServlet {
     

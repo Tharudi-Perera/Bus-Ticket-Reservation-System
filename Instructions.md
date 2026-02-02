@@ -1,8 +1,4 @@
-"complete and send us a war file where as the client can be a jar file with related documentation on how to deploy and execute."
-
-
-
-# Java Developer Assignment: Bus Ticket Reservation REST API
+# Bus Ticket Reservation REST API
 
 ## Scenario
 You need to develop a simple REST API to reserve tickets for a bus. The bus runs between four locations: **A, B, C, and D**, making stops at each.
@@ -34,13 +30,13 @@ Implement **two REST APIs** using Java.
 **Preferred:** Without using frameworks like Spring or JAX-RS, but you can use a JSON library for handling JSON.
 
 #### API 1: Check Availability & Price
-- **Accepts:** Number of passengers, origin, and destination
+- **Accepts:** Number of passengers, origin, trip date and destination
 - **Returns:**
   - Available seats
   - Total price
 
 #### API 2: Reserve Tickets
-- **Accepts:** Passenger count, origin, destination, and price confirmation
+- **Accepts:** Passenger count, origin, destination, trip date and price confirmation
 - **Returns:**
   - Reservation or ticket number
   - Assigned seat numbers

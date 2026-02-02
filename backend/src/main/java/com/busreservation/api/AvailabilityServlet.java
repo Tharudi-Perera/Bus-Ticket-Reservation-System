@@ -20,6 +20,7 @@ import java.io.IOException;
  * 
  * Request Body:
  * {
+ *  "tripdate": "2024-12-25",
  *   "passengers": 2,
  *   "origin": "A",
  *   "destination": "C"
@@ -35,6 +36,7 @@ import java.io.IOException;
  *   "destination": "C"
  * }
  */
+
 @WebServlet(name = "AvailabilityServlet", urlPatterns = {"/api/availability"})
 public class AvailabilityServlet extends HttpServlet {
     

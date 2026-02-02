@@ -187,13 +187,13 @@ docker run -it --network host bus-reservation-client
 ```
 
 ### Welcome Page
-<img src="images/Welcome_Page.png" width="600"/>
+<img src="images/Welcome_Page.png" width="400"/>
 
 ### Availability Check
-<img src="images/Availability_Check.png" width="600"/>
+<img src="images/Availability_Check.png" width="400"/>
 
 ### Make Reservation
-<img src="images/Make_Reservation.png" width="600"/>
+<img src="images/Make_Reservation.png" width="400"/>
 
 ### Error Handling
 <img src="images/Error.png" width="400"/>

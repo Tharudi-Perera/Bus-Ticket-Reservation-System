@@ -1,0 +1,69 @@
+{
+	"info": {
+		"_postman_id": "550e8400-e29b-41d4-a716-446655440000",
+		"name": "Bus Reservation System",
+		"description": "REST API for Bus Ticket Reservation System",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Health Check",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": "http://localhost:8080/bus-reservation/api/test"
+			}
+		},
+		{
+			"name": "Check Availability - A to B",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+                    "raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"B\",\n  \"tripDate\": \"2026-04-15\"\n}"
+				},
+				"url": "http://localhost:8080/bus-reservation/api/availability"
+			}
+		},
+		{
+			"name": "Check Availability - A to D",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"D\",\n  \"tripDate\": \"2026-04-15\"\n}"
+				},
+				"url": "http://localhost:8080/bus-reservation/api/availability"
+			}
+		},
+		{
+			"name": "Create Reservation - A to D",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"passengers\": 2,\n  \"origin\": \"A\",\n  \"destination\": \"D\",\n  \"price\": 300.0,\n  \"tripDate\": \"2026-04-15\"\n}"
+				},
+				"url": "http://localhost:8080/bus-reservation/api/reservation"
+			}
+		}
+	]
+}

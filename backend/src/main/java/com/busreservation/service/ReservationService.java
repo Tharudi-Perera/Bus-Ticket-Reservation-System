@@ -1,0 +1,248 @@
+package com.busreservation.service;
+
+import com.busreservation.dto.ReservationRequestDTO;
+import com.busreservation.dto.ReservationResponseDTO;
+import com.busreservation.entity.Location;
+import com.busreservation.entity.Reservation;
+import com.busreservation.entity.Route;
+import com.busreservation.repository.BusRepository;
+import com.busreservation.repository.ReservationRepository;
+
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * Service for handling ticket reservations.
+ * Manages the complete reservation workflow including validation,
+ * seat allocation, and reservation persistence.
+ */
+public class ReservationService {
+    private static ReservationService instance;
+    
+    private final BusRepository busRepository;
+    private final ReservationRepository reservationRepository;
+    private final PricingService pricingService;
+    private final AvailabilityService availabilityService;
+
+    // ReentrantLock for better concurrency control
+    private final ReentrantLock reservationLock = new ReentrantLock(true); // Fair lock - FIFO ordering
+    
+    // Timeout constant - must be less than client timeout (5s)
+    private static final int LOCK_TIMEOUT_SECONDS = 3;
+    
+    private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    
+    /**
+     * Private constructor for singleton pattern.
+     */
+    private ReservationService() {
+        this.busRepository = BusRepository.getInstance();
+        this.reservationRepository = ReservationRepository.getInstance();
+        this.pricingService = PricingService.getInstance();
+        this.availabilityService = AvailabilityService.getInstance();
+    }
+    
+    /**
+     * Get singleton instance of ReservationService.
+     * @return ReservationService instance
+     */
+    public static synchronized ReservationService getInstance() {
+        if (instance == null) {
+            instance = new ReservationService();
+        }
+        return instance;
+    }
+    
+    /**
+     * Create a new reservation.
+     * Validates the request, allocates seats, and persists the reservation.
+     * Uses ReentrantLock with timeout to prevent indefinite waiting under high load.
+     * 
+     * @param request reservation request with passengers, origin, destination, price, and optional travelDate
+     * @return reservation response with reservation details
+     * @throws IllegalArgumentException if request is invalid
+     * @throws IllegalStateException if seats cannot be allocated or system is too busy
+     */
+    public ReservationResponseDTO createReservation(ReservationRequestDTO request) {
+        // Try to acquire lock with timeout
+        boolean lockAcquired = false;
+       
+        try {
+            // Attempt to acquire lock, wait maximum LOCK_TIMEOUT_SECONDS
+            lockAcquired = reservationLock.tryLock(LOCK_TIMEOUT_SECONDS, TimeUnit.SECONDS);
+            
+            // If lock not acquired within timeout, fail fast
+            if (!lockAcquired) {
+                throw new IllegalStateException(
+                    "System is currently busy processing other reservations. " +
+                    "Please try again in a moment."
+                );
+            }
+                        
+            // Validate request
+            validateReservationRequest(request);
+              
+            // Parse locations
+            Location origin = Location.valueOf(request.getOrigin().toUpperCase());
+            Location destination = Location.valueOf(request.getDestination().toUpperCase());
+            
+            // Get travel date (use today if not provided)
+            String travelDate = request.getTravelDate();
+            if (travelDate == null || travelDate.trim().isEmpty()) {
+                travelDate = java.time.LocalDate.now().toString();
+            }
+            
+            // Validate price
+            if (!pricingService.validatePrice(origin, destination, request.getPassengers(), request.getPrice())) {
+                throw new IllegalArgumentException("Invalid price. Expected: " + 
+                    pricingService.calculateTotalPrice(origin, destination, request.getPassengers()));
+            }
+            
+            // Check availability for the specified date
+            List<String> availableSeats = busRepository.getAvailableSeats(origin, destination, request.getPassengers(), travelDate);
+            
+            if (availableSeats.size() < request.getPassengers()) {
+                throw new IllegalStateException("Not enough seats available. Only " + availableSeats.size() + " seat(s) available.");
+            }
+            
+            // Take only the number of seats needed
+            List<String> seatsToReserve = availableSeats.subList(0, request.getPassengers());
+            
+            // Reserve seats in repository for the specified date
+            boolean reserved = busRepository.reserveSeats(origin, destination, seatsToReserve, travelDate);
+            
+            if (!reserved) {
+                throw new IllegalStateException("Failed to reserve seats. They may have been taken by another user.");
+            }
+            
+            // Create route and reservation
+            Route route = new Route(origin, destination);
+            Reservation reservation = new Reservation(route, seatsToReserve, request.getPassengers(), request.getPrice(), travelDate);
+            
+            // Save reservation
+            reservationRepository.save(reservation);
+            
+            // Build response
+            return new ReservationResponseDTO(
+                reservation.getReservationId(),
+                seatsToReserve,
+                request.getOrigin(),
+                request.getDestination(),
+                request.getPassengers(),
+                request.getPrice(),
+                DATE_FORMATTER.format(reservation.getReservationTime())
+            );
+            
+        } catch (InterruptedException e) {  // Handle thread interruption
+            Thread.currentThread().interrupt(); // Restore interrupt status
+            throw new IllegalStateException(
+                "Reservation request was interrupted. Please try again.",
+                e
+            );
+        } finally {  // Always release lock if acquired
+            if (lockAcquired) {
+                reservationLock.unlock();
+            }
+        }
+    }
+    
+    /**
+     * Get a reservation by ID.
+     * 
+     * @param reservationId the reservation ID
+     * @return reservation response if found
+     * @throws IllegalArgumentException if reservation not found
+     */
+    public ReservationResponseDTO getReservation(String reservationId) {
+        Reservation reservation = reservationRepository.findById(reservationId)
+            .orElseThrow(() -> new IllegalArgumentException("Reservation not found: " + reservationId));
+        
+        return new ReservationResponseDTO(
+            reservation.getReservationId(),
+            reservation.getSeatNumbers(),
+            reservation.getRoute().getOrigin().name(),
+            reservation.getRoute().getDestination().name(),
+            reservation.getPassengerCount(),
+            reservation.getTotalPrice(),
+            DATE_FORMATTER.format(reservation.getReservationTime())
+        );
+    }
+    
+    /**
+     * Get all reservations.
+     * 
+     * @return list of all reservations
+     */
+    public List<Reservation> getAllReservations() {
+        return reservationRepository.findAll();
+    }
+    
+    /**
+     * Cancel a reservation (for testing/admin purposes).
+     * Note: In production, you'd implement proper cancellation logic with seat release.
+     * 
+     * @param reservationId the reservation ID
+     * @return true if cancelled, false if not found
+     */
+    public boolean cancelReservation(String reservationId) {
+        return reservationRepository.deleteById(reservationId);
+    }
+    
+    /**
+     * Validate reservation request.
+     * 
+     * @param request reservation request to validate
+     * @throws IllegalArgumentException if request is invalid
+     */
+    private void validateReservationRequest(ReservationRequestDTO request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Request cannot be null");
+        }
+        
+        if (request.getPassengers() < 1) {
+            throw new IllegalArgumentException("Number of passengers must be at least 1");
+        }
+        
+        if (request.getPassengers() > 40) {
+            throw new IllegalArgumentException("Number of passengers cannot exceed 40");
+        }
+        
+        if (request.getOrigin() == null || request.getOrigin().trim().isEmpty()) {
+            throw new IllegalArgumentException("Origin cannot be null or empty");
+        }
+        
+        if (request.getDestination() == null || request.getDestination().trim().isEmpty()) {
+            throw new IllegalArgumentException("Destination cannot be null or empty");
+        }
+        
+        if (request.getPrice() == null || request.getPrice() <= 0) {
+            throw new IllegalArgumentException("Price must be greater than 0");
+        }
+        
+        // Validate travel date format if provided
+        if (request.getTravelDate() != null && !request.getTravelDate().trim().isEmpty()) {
+            try {
+                java.time.LocalDate.parse(request.getTravelDate());
+            } catch (Exception e) {
+                throw new IllegalArgumentException("Invalid date format. Use YYYY-MM-DD");
+            }
+        }
+        
+        // Validate locations exist
+        try {
+            Location origin = Location.valueOf(request.getOrigin().toUpperCase());
+            Location destination = Location.valueOf(request.getDestination().toUpperCase());
+            
+            if (origin == destination) {
+                throw new IllegalArgumentException("Origin and destination cannot be the same");
+            }
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("No enum constant")) {
+                throw new IllegalArgumentException("Invalid location. Must be one of: A, B, C, D");
+            }
+            throw e;
+        }
+    }
+}

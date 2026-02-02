@@ -1,30 +1,30 @@
-# Bus Reservation System - Client Dockerfile
-# Multi-stage build for optimized image size
+# Multi-stage build for Bus Reservation Client
+FROM maven:3.9-eclipse-temurin-17 AS build
 
-# Stage 1: Build the application
-FROM maven:3.9-eclipse-temurin-17 AS builder
-
-WORKDIR /build
-
-# Copy pom.xml first for better layer caching
-COPY pom.xml .
-RUN mvn dependency:go-offline
-
-# Copy source code and build
-COPY src ./src
-RUN mvn clean package -DskipTests
-
-# Stage 2: Create runtime image
-FROM eclipse-temurin:17-jre-jammy
-
+# Set working directory
 WORKDIR /app
 
-# Copy the JAR file from builder stage
-COPY --from=builder /build/target/bus-reservation-client-jar-with-dependencies.jar /app/bus-reservation-client.jar
+# Copy pom.xml and download dependencies
+COPY pom.xml .
+RUN mvn dependency:go-offline -B
 
-# Default API URL (can be overridden at runtime)
+# Copy source code
+COPY src ./src
+
+# Build the application
+RUN mvn clean package
+
+# Production stage
+FROM eclipse-temurin:17-jre
+
+# Set working directory
+WORKDIR /app
+
+# Copy the JAR with dependencies from build stage
+COPY --from=build /app/target/bus-reservation-client-jar-with-dependencies.jar /app/client.jar
+
+# Set the API URL as environment variable (can be overridden)
 ENV API_URL=http://backend:8080/bus-reservation
 
-# Run the client application
-# Pass API_URL as argument to the Java application
-CMD ["sh", "-c", "java -jar /app/bus-reservation-client.jar ${API_URL}"]
+# Run the client application with API_URL from environment
+ENTRYPOINT ["sh", "-c", "java -jar /app/client.jar $API_URL"]

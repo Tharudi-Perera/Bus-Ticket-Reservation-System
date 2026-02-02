@@ -1,40 +1,9 @@
-# Maven
 target/
-!target/*.jar
-!target/*.war
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-release.properties
-dependency-reduced-pom.xml
-
-# IDE
+.git/
+.gitignore
+*.md
+.mvn/
 .idea/
 *.iml
 .vscode/
-.eclipse/
-.settings/
-.classpath
-.project
-
-# Git
-.git/
-.gitignore
-.gitattributes
-
-# Documentation
-*.md
-!README.md
-docs/
-release/
-
-# OS
-.DS_Store
-Thumbs.db
 *.log
-
-# Test
-*.test
-test-results/
-coverage/

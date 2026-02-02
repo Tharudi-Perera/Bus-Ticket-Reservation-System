@@ -164,26 +164,14 @@ docker-compose up --build
 # Run in background
 docker-compose up -d
 
+# ⭐ Access client in interactive mode ⭐
+docker compose run --rm client
+
 # View logs
 docker-compose logs -f
 
 # Stop services
 docker-compose down
-```
-
-#### Manual Docker Commands
-```bash
-# Build backend image
-cd backend
-docker build -t bus-reservation-backend .
-
-# Run backend container
-docker run -d -p 8080:8080 --name bus-reservation-backend bus-reservation-backend
-
-# Run client (interactive)
-cd ../client
-docker build -t bus-reservation-client .
-docker run -it --network host bus-reservation-client
 ```
 
 ### Welcome Page

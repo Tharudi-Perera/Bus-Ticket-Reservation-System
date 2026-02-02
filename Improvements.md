@@ -76,21 +76,21 @@ This document outlines potential enhancements and recommendations for evolving t
 
 ## 4. Advanced Booking Features
 
-- 1 Seat Selection
+1. Seat Selection
   Current : System auto-assigns seats  
   Improvement : Let users choose specific seats
 
-- 2 Temporary Seat Hold
+2. Temporary Seat Hold
   Problem : User checks availability, but seats get booked before payment  
   Solution : Hold seats for 10 minutes
 
-- 3 Round Trip Booking
+3. Round Trip Booking
   Current : One-way only  
   Improvement : Book return journey
 
-- 4 Cancellation & Refunds
+4. Cancellation & Refunds
 
-- 5 Multi-Bus Fleet Management
+5. Multi-Bus Fleet Management
   Current : Single bus with fixed route  
   Improvement : Support multiple buses with different routes and schedules
 

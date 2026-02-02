@@ -3,16 +3,17 @@ Complete bus reservation system: thread-safe REST API backend (Java Servlets, To
 
 
 ## 📋 Table of Contents
-- [Implemented Features](#implemented-features)
-- [System Requirements](#system-requirements)
-- [Technology Stack](#technology-stack)
-- [Quick Start](#quick-start)
-- [System Architecture](#system-architecture)
-- [Testing](#testing)
+## ✨ Implemented Features <a id="implemented-features"></a>
+## 💻 System Requirements <a id="system-requirements"></a>
+## 🛠️ Technology Stack <a id="technology-stack"></a>
+## 🚀 Quick Start <a id="quick-start"></a>
+## 🏗️ System Architecture <a id="system-architecture"></a>
+## 🧪 Testing <a id="testing"></a>
+
 
 ---
 
-## ✨ Implemented Features
+## ✨ Implemented Features <a id="implemented-features"></a>
 
 | Feature / Requirement | Status | Description |
 |----------------------|--------|-------------|
@@ -37,7 +38,7 @@ Complete bus reservation system: thread-safe REST API backend (Java Servlets, To
 
 ---
 
-## 💻 System Requirements
+## 💻 System Requirements <a id="system-requirements"></a>
 
 ### Prerequisites
 - **Java**: JDK 17 or higher
@@ -58,7 +59,7 @@ mvn -version
 
 ---
 
-## 🛠️ Technology Stack
+## 🛠️ Technology Stack <a id="technology-stack"></a>
 
 ### Backend
 | Technology | Version | Purpose |
@@ -89,7 +90,7 @@ mvn -version
 ---
 
 
-## 🚀 Quick Start
+## 🚀 Quick Start   <a id="quick-start"></a>
 
 ### Option 1
 
@@ -202,7 +203,7 @@ docker run -it --network host bus-reservation-client
 
 ---
 
-## 🏗️ System Architecture
+## 🏗️ System Architecture    <a id="system-architecture"></a>
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -262,7 +263,7 @@ docker run -it --network host bus-reservation-client
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing   <a id="testing"></a>
 
 ### Run All Tests
 ```bash

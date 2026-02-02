@@ -196,7 +196,7 @@ docker run -it --network host bus-reservation-client
 <img src="images/Make_Reservation.png" width="600"/>
 
 ### Error Handling
-<img src="images/Error.png" width="600"/>
+<img src="images/Error.png" width="400"/>
 
 ---
 

@@ -1,19 +1,17 @@
 # Bus-Ticket-Reservation-System
 Complete bus reservation system: thread-safe REST API backend (Java Servlets, Tomcat) + interactive CLI frontend (Java HttpClient). Implements ReentrantReadWriteLock for race-free booking, clean layered architecture, and RESTful design. No framework dependencies - pure Java mastery.
 
-
 ## 📋 Table of Contents
-## ✨ Implemented Features <a id="implemented-features"></a>
-## 💻 System Requirements <a id="system-requirements"></a>
-## 🛠️ Technology Stack <a id="technology-stack"></a>
-## 🚀 Quick Start <a id="quick-start"></a>
-## 🏗️ System Architecture <a id="system-architecture"></a>
-## 🧪 Testing <a id="testing"></a>
-
+- [Implemented Features](#implemented-features)
+- [System Requirements](#system-requirements)
+- [Technology Stack](#technology-stack)
+- [Quick Start](#quick-start)
+- [System Architecture](#system-architecture)
+- [Testing](#testing)
 
 ---
 
-## ✨ Implemented Features <a id="implemented-features"></a>
+## Implemented Features 
 
 | Feature / Requirement | Status | Description |
 |----------------------|--------|-------------|
@@ -38,7 +36,7 @@ Complete bus reservation system: thread-safe REST API backend (Java Servlets, To
 
 ---
 
-## 💻 System Requirements <a id="system-requirements"></a>
+## System Requirements 
 
 ### Prerequisites
 - **Java**: JDK 17 or higher
@@ -59,7 +57,7 @@ mvn -version
 
 ---
 
-## 🛠️ Technology Stack <a id="technology-stack"></a>
+## Technology Stack
 
 ### Backend
 | Technology | Version | Purpose |
@@ -89,8 +87,7 @@ mvn -version
 
 ---
 
-
-## 🚀 Quick Start   <a id="quick-start"></a>
+## Quick Start  
 
 ### Option 1
 
@@ -203,7 +200,7 @@ docker run -it --network host bus-reservation-client
 
 ---
 
-## 🏗️ System Architecture    <a id="system-architecture"></a>
+## System Architecture   
 
 ```
 ┌────────────────────────────────────────────────────────────┐
@@ -263,7 +260,7 @@ docker run -it --network host bus-reservation-client
 
 ---
 
-## 🧪 Testing   <a id="testing"></a>
+## Testing  
 
 ### Run All Tests
 ```bash

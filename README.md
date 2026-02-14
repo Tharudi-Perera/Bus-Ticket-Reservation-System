@@ -120,6 +120,7 @@ cp target/bus-reservation.war $CATALINA_HOME/webapps/
 # Start Tomcat
 $CATALINA_HOME/bin/startup.sh      # Linux/Mac
 $CATALINA_HOME/bin/startup.bat     # Windows
+%CATALINA_HOME%\bin\startup.bat
 
 # Watch deployment logs
 tail -f $CATALINA_HOME/logs/catalina.out

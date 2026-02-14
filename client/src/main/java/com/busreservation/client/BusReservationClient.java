@@ -11,7 +11,7 @@ import java.util.Scanner;
  */
 public class BusReservationClient {
     
-    private static final String DEFAULT_API_URL = "http://localhost:8080/bus-reservation";
+    private static final String DEFAULT_API_URL = "http://52.151.196.202:8082/bus-reservation";
     private static final String AVAILABILITY_ENDPOINT = "/api/availability";
     private static final String RESERVATION_ENDPOINT = "/api/reservation";
     

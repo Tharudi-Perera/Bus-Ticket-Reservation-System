@@ -1,7 +1,19 @@
 # Bus Reservation System - Client Application
-Client for the bus ticket reservation system.
+Command-line client for the bus ticket reservation system.
+
+## 🚀 Native Windows Executable Available!
+
+**Want a standalone .exe with no Java required?**  
+👉 See [QUICKSTART-NATIVE.md](QUICKSTART-NATIVE.md) for building a native Windows executable with GraalVM.
+
+Benefits:
+- ⚡ Fast startup (50-100ms)
+- 💾 Low memory footprint (10-20 MB)
+- 📦 Single .exe file - no Java installation needed
+- 🚀 Ready for distribution
 
 ## 📋 Table of Contents
+- [Native Executable](#-native-windows-executable-available)
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
